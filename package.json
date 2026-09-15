@@ -10,7 +10,7 @@
     "test:visual": "playwright test"
   },
   "dependencies": {
-    "firebase": "^10.8.0",
+    "firebase": "^12.19.0",
     "vue": "^3.4.15"
   },
   "devDependencies": {

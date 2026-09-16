@@ -335,12 +335,12 @@ async function signIn() {
   }
 }
 
-watch([selectedCourse, selectedDate], ([courseId, date]) => {
-  if (prototypeMode) return;
+function subscribeDay() {
+  if (prototypeMode || document.hidden) return;
   unsubscribeDay();
   day.value = null;
   loadingDay.value = true;
-  unsubscribeDay = subscribePublicGuardiesDay(courseId, date, (value) => {
+  unsubscribeDay = subscribePublicGuardiesDay(selectedCourse.value, selectedDate.value, (value) => {
     day.value = value;
     loadingDay.value = false;
     errorMessage.value = '';
@@ -350,17 +350,13 @@ watch([selectedCourse, selectedDate], ([courseId, date]) => {
       ? 'No s’ha pogut carregar la jornada.'
       : (error?.message || String(error));
   });
-}, { immediate: true });
+}
 
-watch([views, () => config.forcedViewId, activeViewIndex], scheduleRotation, { deep: true });
-watch([currentSlot, selectedDate, activeViewType, day], centerCurrentHour);
+watch([selectedCourse, selectedDate], subscribeDay, { immediate: true });
 
-onMounted(async () => {
-  if (prototypeMode) return;
-  if (managementMode) {
-    adminAllowed.value = await isPantallesAdmin().catch(() => false);
-    adminReady.value = true;
-  }
+function subscribeConfig() {
+  if (prototypeMode || document.hidden) return;
+  unsubscribeConfig();
   unsubscribeConfig = subscribeScreenConfig(screenId, (next, exists) => {
     Object.assign(config, next);
     if (!config.views.some((view) => view.id === editingViewId.value)) editingViewId.value = config.views[0]?.id || '';
@@ -373,12 +369,38 @@ onMounted(async () => {
     loadingConfig.value = false;
     errorMessage.value = error?.message || String(error);
   });
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    unsubscribeConfig();
+    unsubscribeDay();
+    unsubscribeConfig = () => {};
+    unsubscribeDay = () => {};
+    return;
+  }
+  subscribeConfig();
+  subscribeDay();
+}
+
+watch([views, () => config.forcedViewId, activeViewIndex], scheduleRotation, { deep: true });
+watch([currentSlot, selectedDate, activeViewType, day], centerCurrentHour);
+
+onMounted(async () => {
+  if (prototypeMode) return;
+  if (managementMode) {
+    adminAllowed.value = await isPantallesAdmin().catch(() => false);
+    adminReady.value = true;
+  }
+  subscribeConfig();
+  document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('online', () => { connected.value = true; });
   window.addEventListener('offline', () => { connected.value = false; });
   clockTimer = window.setInterval(() => { clock.value = new Date(); }, 1000);
 });
 
 onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
   unsubscribeConfig();
   unsubscribeDay();
   window.clearTimeout(saveTimer);

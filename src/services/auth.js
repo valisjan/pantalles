@@ -1,12 +1,16 @@
 import {
+  browserLocalPersistence,
   GoogleAuthProvider,
+  setPersistence,
   signInWithPopup,
 } from 'firebase/auth';
-import { auth } from '../firebase.js';
+import { auth, authPersistenceReady } from '../firebase.js';
 
 const STAFF_DOMAIN = 'iesjosepsuredaiblanes.com';
 
 export async function signInPantalles() {
+  await authPersistenceReady;
+  await setPersistence(auth, browserLocalPersistence).catch(() => {});
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ hd: STAFF_DOMAIN, prompt: 'select_account' });
   try {

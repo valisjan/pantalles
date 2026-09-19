@@ -13,6 +13,12 @@ import {
 } from '../../src/services/pantallesStorage.js';
 
 const params = new URLSearchParams(window.location.search);
+const netlifyMode = window.location.hostname.endsWith('.netlify.app');
+const appLinks = {
+  quota: netlifyMode ? 'https://chic-tartufo-68ee9c.netlify.app/' : 'https://quota.iessureda.com/',
+  guardies: netlifyMode ? 'https://guardies.netlify.app/' : 'https://guardies.iessureda.com/',
+  retards: netlifyMode ? 'https://spontaneous-gecko-a2703a.netlify.app/' : 'https://retards.iessureda.com/',
+};
 const screenId = params.get('pantalla') || DEFAULT_SCREEN_ID;
 const managementMode = params.get('gestio') === '1';
 const queryCourse = params.get('curs') || '';
@@ -425,10 +431,11 @@ onBeforeUnmount(() => {
           <span><strong>PANTALLES</strong><small>IES Josep Sureda i Blanes</small></span>
         </a>
         <div class="management-nav-tabs" aria-label="Seccions">
-          <a href="https://quota.iessureda.com/">Quota</a>
-          <a href="https://guardies.iessureda.com/">Guàrdies</a>
-          <a href="https://guardies.iessureda.com/?vista=professor">Professorat</a>
+          <a :href="appLinks.quota">Quota</a>
+          <a :href="appLinks.guardies">Guàrdies</a>
+          <a :href="`${appLinks.guardies}?vista=professor`">Professorat</a>
           <a class="active" href="/?gestio=1&amp;pantalla=sala-professorat" aria-current="page">Pantalles</a>
+          <a :href="appLinks.retards">Retards</a>
         </div>
         <button type="button" class="management-theme-toggle" aria-label="Canvia el tema" @click="toggleManagementTheme">
           <span aria-hidden="true">◐</span> {{ managementDark ? 'Clar' : 'Fosc' }}

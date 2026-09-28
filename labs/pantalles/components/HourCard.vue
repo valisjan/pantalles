@@ -2,9 +2,10 @@
 import { computed } from 'vue';
 import { hourProgress, hourRange } from '../../../src/domain/calendar.js';
 import {
-  ROW_STATUS_LABELS,
   isPatioHour,
+  rowCoverLabel,
   rowCoverText,
+  rowRole,
   rowSourceMark,
   rowStatus,
   shortHourLabel,
@@ -29,7 +30,8 @@ const rows = computed(() => (props.hour.rows || []).map((row) => {
   return {
     ...row,
     status,
-    statusLabel: ROW_STATUS_LABELS[status],
+    role: rowRole(row),
+    statusLabel: rowCoverLabel(row),
     cover: rowCoverText(row),
     mark: rowSourceMark(row),
     detail: [row.subject !== row.group ? row.subject : '', row.room].filter(Boolean).join(' · '),
@@ -76,7 +78,7 @@ const count = computed(() => {
     </div>
 
     <TransitionGroup v-else-if="rows.length" name="row" tag="div" class="guard-list">
-      <article v-for="row in rows" :key="row.id" class="guard-row" :class="`status-${row.status}`">
+      <article v-for="row in rows" :key="row.id" class="guard-row" :class="[`status-${row.status}`, row.role && `role-${row.role}`]">
         <div class="absent-person">
           <span class="cell-label">Absència</span>
           <strong>{{ row.absent }}</strong>
@@ -90,7 +92,6 @@ const count = computed(() => {
           <strong>
             {{ row.cover }}
             <abbr v-if="row.mark === 'guard'" class="source-mark is-guard" title="Professorat de guàrdia">G</abbr>
-            <span v-else-if="row.mark === 'released'" class="source-mark is-released">Alliberat/ada</span>
           </strong>
         </div>
         <p v-if="row.comment" class="row-comment">{{ row.comment }}</p>

@@ -184,11 +184,14 @@ test('cada cobertura mostra el mateix estat que el full de guàrdies', async ({ 
   await expect(rows.filter({ hasText: 'Docent A' })).toHaveClass(/status-open/);
   await expect(rows.filter({ hasText: 'Docent A' })).toContainText('Pendent');
   await expect(rows.filter({ hasText: 'Docent B' })).toHaveClass(/status-covered/);
-  await expect(rows.filter({ hasText: 'Docent B' })).toContainText('Professorat de guàrdia');
+  // Guàrdia, codocència i alliberat es distingeixen per l'etiqueta i el color.
+  await expect(rows.filter({ hasText: 'Docent B' })).toHaveClass(/role-guard/);
+  await expect(rows.filter({ hasText: 'Docent B' }).locator('.status-label')).toHaveText('Guàrdia');
   await expect(rows.filter({ hasText: 'Docent B' }).locator('.source-mark.is-guard')).toHaveText('G');
-  await expect(rows.filter({ hasText: 'Docent G' }).locator('.source-mark.is-released')).toHaveText('Alliberat/ada');
+  await expect(rows.filter({ hasText: 'Docent C' }).locator('.status-label')).toHaveText('Queden amb');
+  await expect(rows.filter({ hasText: 'Docent G' }).locator('.status-label')).toHaveText('Alliberat/ada');
   await expect(rows.filter({ hasText: 'Docent C' }).locator('.source-mark')).toHaveCount(0);
-  await expect(rows.filter({ hasText: 'Docent C' })).toContainText('Queda amb el grup');
+  await expect(rows.filter({ hasText: 'Docent G' }).locator('.source-mark')).toHaveCount(0);
   await expect(rows.filter({ hasText: 'Docent D' })).toContainText('Torna al seu grup');
   await expect(rows.filter({ hasText: 'Docent D' })).toContainText('Sense substitució');
   await expect(rows.filter({ hasText: 'Docent E' })).toHaveClass(/status-info/);

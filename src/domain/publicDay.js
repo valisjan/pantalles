@@ -3,8 +3,8 @@
 
 export const ROW_STATUS_LABELS = Object.freeze({
   open: 'Sense cobrir',
-  covered: 'Professorat de guàrdia',
-  coteacher: 'Queda amb el grup',
+  covered: 'Cobreix',
+  coteacher: 'Queden amb',
   returns: 'Torna al seu grup',
   'not-done': 'No realitzada',
   info: 'No cal cobrir-la',
@@ -31,12 +31,32 @@ export function rowCoverText(row) {
   return 'Pendent';
 }
 
-// Qui cobreix una guàrdia: professorat de guàrdia (G) o alliberat per una sortida.
-export function rowSourceMark(row) {
-  if (!row?.assigned || row.coTeacher || row.cancelled) return '';
+// Qui es fa càrrec del grup: professorat de guàrdia, el docent que ja hi era
+// (codocència) o professorat alliberat per una sortida.
+export const COVER_ROLE_LABELS = Object.freeze({
+  guard: 'Guàrdia',
+  coteacher: 'Queden amb',
+  released: 'Alliberat/ada',
+});
+
+export function rowRole(row) {
+  if (!row?.assigned) return '';
+  if (row.coTeacher || row.source === 'co-teacher') return 'coteacher';
   if (row.source === 'guard') return 'guard';
   if (row.source === 'released') return 'released';
-  return '';
+  // Un altre docent o una jornada publicada abans que se'n guardés l'origen.
+  return 'other';
+}
+
+export function rowCoverLabel(row) {
+  const status = rowStatus(row);
+  if (status === 'covered' || status === 'coteacher') return COVER_ROLE_LABELS[rowRole(row)] || ROW_STATUS_LABELS[status];
+  return ROW_STATUS_LABELS[status];
+}
+
+// La G darrere el nom: qui cobreix és professorat de guàrdia.
+export function rowSourceMark(row) {
+  return rowStatus(row) === 'covered' && rowRole(row) === 'guard' ? 'guard' : '';
 }
 
 // Guàrdies que algú ha de fer (o fer-se càrrec) en una hora.

@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { daySummary, hourSummary, rowCoverText, rowSourceMark, rowStatus, shortHourLabel } from '../../src/domain/publicDay.js';
+import {
+  daySummary,
+  hourSummary,
+  rowCoverLabel,
+  rowCoverText,
+  rowRole,
+  rowSourceMark,
+  rowStatus,
+  shortHourLabel,
+} from '../../src/domain/publicDay.js';
 import { normalizeCanvaUrl, normalizeDriveUrl } from '../../src/domain/embeds.js';
 
 const rows = {
@@ -45,9 +54,18 @@ test('converteix enllaços de Drive i Canva en adreces inseribles', () => {
   assert.equal(normalizeCanvaUrl('http://www.canva.com/design/ABC/view'), '');
 });
 
-test('distingeix el professorat de guàrdia (G) del professorat alliberat', () => {
-  assert.equal(rowSourceMark({ assigned: 'Pere', source: 'guard' }), 'guard');
-  assert.equal(rowSourceMark({ assigned: 'Joana', source: 'released' }), 'released');
+test('distingeix guàrdia, codocència i professorat alliberat', () => {
+  const guard = { assigned: 'Pere', source: 'guard' };
+  const coteacher = { assigned: 'Llucia', source: 'co-teacher', coTeacher: true };
+  const released = { assigned: 'Joana', source: 'released' };
+  const legacy = { assigned: 'Aina' };
+  assert.deepEqual([guard, coteacher, released, legacy].map(rowRole), ['guard', 'coteacher', 'released', 'other']);
+  assert.deepEqual([guard, coteacher, released, legacy].map(rowCoverLabel), ['Guàrdia', 'Queden amb', 'Alliberat/ada', 'Cobreix']);
+  assert.equal(rowCoverLabel({ assigned: '' }), 'Sense cobrir');
+  assert.equal(rowCoverLabel({ ...guard, cancelled: true }), 'No realitzada');
+
+  assert.equal(rowSourceMark(guard), 'guard');
+  assert.equal(rowSourceMark(released), '');
   assert.equal(rowSourceMark({ assigned: 'Llucia', source: 'co-teacher', coTeacher: true }), '');
   assert.equal(rowSourceMark({ assigned: 'Pere', source: 'guard', cancelled: true }), '');
   assert.equal(rowSourceMark({ assigned: '', source: '' }), '');

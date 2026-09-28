@@ -35,6 +35,8 @@
     --amber-soft: #fff0dd;
     --amber-border: #f3c98f;
     --amber-dot: #e07b00;
+    --teal: #0b6b78;
+    --teal-soft: #dff2f4;
     --shadow: 0 1px 2px rgb(20 24 32 / 0.04), 0 4px 14px rgb(20 24 32 / 0.05);
     --shadow-small: 0 1px 2px rgb(20 24 32 / 0.06);
     --radius: 14px;
@@ -78,6 +80,8 @@
     --amber-soft: #3a2915;
     --amber-border: #6b4a22;
     --amber-dot: #ff9f3d;
+    --teal: #74d4df;
+    --teal-soft: #12302f;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 18px rgb(0 0 0 / 0.22);
     --shadow-small: 0 1px 2px rgb(0 0 0 / 0.3);
   }
@@ -827,10 +831,14 @@
   .status-open::before { background: var(--amber-dot); }
   .status-open .status-label,
   .status-open .assigned-person strong { color: var(--amber); }
+  /* Qui cobreix: guàrdia (índigo), queden amb el docent de codocència (blau
+     verdós) i alliberat per una sortida (verd, com qualsevol altra cobertura). */
+  .status-covered.role-guard::before { background: var(--primary); }
+  .status-covered.role-guard .status-label { color: var(--primary); }
   .status-coteacher::before,
-  .status-returns::before { background: var(--primary); }
+  .status-returns::before { background: var(--teal); }
   .status-coteacher .status-label,
-  .status-returns .status-label { color: var(--primary); }
+  .status-returns .status-label { color: var(--teal); }
   .status-returns .assigned-person strong,
   .status-info .assigned-person strong { color: var(--muted); }
   .status-not-done::before { background: var(--coral); }

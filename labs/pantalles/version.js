@@ -1,6 +1,13 @@
-export const PANTALLES_VERSION = '1.4.0';
+export const PANTALLES_VERSION = '1.5.0';
 
 export const PANTALLES_RELEASES = [
+  {
+    version: '1.5.0',
+    date: '28 de setembre de 2026',
+    changes: [
+      'Es distingeix qui es fa càrrec de cada grup: «Guàrdia» (amb la G), «Queden amb» quan hi ha codocència i «Alliberat/ada» quan el grup del docent és de sortida, cadascun amb el seu color.',
+    ],
+  },
   {
     version: '1.4.0',
     date: '28 de setembre de 2026',

@@ -7,6 +7,7 @@ import {
 } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase';
+import { normalizeSchedule } from '../domain/schedule.js';
 import { E2E_AUTH_BYPASS, E2E_CURS_ID } from './e2e';
 
 export const DEFAULT_SCREEN_ID = 'sala-professorat';
@@ -31,13 +32,15 @@ export const DEFAULT_SCREEN_CONFIG = Object.freeze({
     type: 'guardies',
     driveUrl: '',
     canvaUrl: '',
+    text: '',
+    schedule: normalizeSchedule(),
   }],
   forcedViewId: '',
   message: '',
 });
 
 const AVAILABLE_MODULES = ['guardies', 'pati', 'sortides'];
-const VIEW_TYPES = ['guardies', 'drive', 'canva'];
+const VIEW_TYPES = ['guardies', 'drive', 'canva', 'text'];
 
 function normalizeModules(modules) {
   return Array.from(new Set(Array.isArray(modules) ? modules : []))
@@ -69,6 +72,8 @@ function normalizeViews(data = {}) {
       type: VIEW_TYPES.includes(legacyType) ? legacyType : 'guardies',
       driveUrl: String(view?.driveUrl || view?.assetUrl || '').slice(0, 2000),
       canvaUrl: String(view?.canvaUrl || '').slice(0, 2000),
+      text: String(view?.text || '').slice(0, 600),
+      schedule: normalizeSchedule(view?.schedule),
     };
   });
 }

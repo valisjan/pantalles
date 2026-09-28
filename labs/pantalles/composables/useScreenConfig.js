@@ -6,8 +6,9 @@ import {
 } from '../../../src/services/pantallesStorage.js';
 import { usePageState } from './usePageState.js';
 
+// Còpia profunda: la gestió modifica les vistes (i la seva programació) al lloc.
 function defaultConfig() {
-  return { ...DEFAULT_SCREEN_CONFIG, views: DEFAULT_SCREEN_CONFIG.views.map((view) => ({ ...view })) };
+  return structuredClone(DEFAULT_SCREEN_CONFIG);
 }
 
 // Configuració d'una pantalla: una sola subscripció per a tota l'aplicació.

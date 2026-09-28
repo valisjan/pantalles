@@ -159,11 +159,12 @@ function jumpToHour(key) {
 }
 
 // La sessió actual es posa al centre, però mai mentre algú llegeix la pantalla.
-watch([() => slot.value?.key, day, viewType, interacting], () => {
+function centerCurrentHour() {
   if (preview.value || interacting.value || viewType.value !== 'guardies' || !slot.value) return;
   const hour = hours.value.find(isCurrent);
   if (hour) centerHour(hour.key);
-});
+}
+watch([() => slot.value?.key, day, viewType, interacting], centerCurrentHour);
 
 onBeforeUnmount(() => {
   window.clearTimeout(idleTimer);
@@ -200,19 +201,19 @@ onBeforeUnmount(() => {
 
         <div v-if="viewType === 'guardies' && ready && day" class="kiosk-summary" aria-label="Resum de la jornada">
           <div class="kiosk-kpi" :class="summary.open ? 'is-open' : 'is-covered'">
-            <strong>{{ summary.open }}</strong>
+            <strong :key="summary.open" class="kpi-value">{{ summary.open }}</strong>
             <span>{{ summary.open === 1 ? 'guàrdia sense cobrir' : 'guàrdies sense cobrir' }}</span>
           </div>
           <div class="kiosk-kpi">
-            <strong>{{ summary.guards }}</strong>
+            <strong :key="summary.guards" class="kpi-value">{{ summary.guards }}</strong>
             <span>{{ summary.guards === 1 ? 'guàrdia' : 'guàrdies' }}</span>
           </div>
           <div class="kiosk-kpi">
-            <strong>{{ summary.absences }}</strong>
+            <strong :key="summary.absences" class="kpi-value">{{ summary.absences }}</strong>
             <span>{{ summary.absences === 1 ? 'absència' : 'absències' }}</span>
           </div>
           <div v-if="summary.outings" class="kiosk-kpi">
-            <strong>{{ summary.outings }}</strong>
+            <strong :key="summary.outings" class="kpi-value">{{ summary.outings }}</strong>
             <span>{{ summary.outings === 1 ? 'grup fora' : 'grups fora' }}</span>
           </div>
         </div>
@@ -235,26 +236,27 @@ onBeforeUnmount(() => {
 
         <p v-if="config.message" class="kiosk-banner screen-message">{{ config.message }}</p>
 
-        <NoticeView v-if="viewType === 'text' && activeView" :view="activeView" />
+        <Transition name="view" mode="out-in" @after-enter="centerCurrentHour">
+        <NoticeView v-if="viewType === 'text' && activeView" :key="`notice-${activeView.id}`" :view="activeView" />
 
-        <MediaView v-else-if="viewType !== 'guardies' && activeView" :view="activeView" />
+        <MediaView v-else-if="viewType !== 'guardies' && activeView" :key="`media-${activeView.id}`" :view="activeView" />
 
-        <section v-else-if="!ready" class="kiosk-state">
+        <section v-else-if="!ready" key="loading" class="kiosk-state">
           <span class="spinner" aria-hidden="true"></span>
           <strong>Carregant la jornada…</strong>
         </section>
 
-        <section v-else-if="!day" class="kiosk-state no-day">
+        <section v-else-if="!day" :key="`no-day-${selectedDate}`" class="kiosk-state no-day">
           <span class="no-day-date">{{ formatLongDate(selectedDate) }}</span>
           <strong>{{ dayError || (isWeekend(selectedDate) ? 'Dia no lectiu' : "No s'ha publicat el full de guàrdies d'aquest dia") }}</strong>
         </section>
 
-        <div v-else class="day-content">
-          <HourCard v-for="hour in hours" :key="hour.key" :hour="hour" :current="isCurrent(hour)" :past="isPast(hour)" />
+        <div v-else :key="`day-${selectedDate}`" class="day-content">
+          <HourCard v-for="(hour, index) in hours" :key="hour.key" :hour="hour" :index="index" :current="isCurrent(hour)" :past="isPast(hour)" />
 
-          <section v-if="outings.length" class="hour-card outings-card">
+          <section v-if="outings.length" class="hour-card outings-card" :style="{ '--i': hours.length }">
             <header class="hour-card-head">
-              <h2>Grups de sortida</h2>
+              <div class="hour-title"><h2>Grups de sortida</h2></div>
               <div class="session-meta"><span>{{ outings.length }} {{ outings.length === 1 ? 'grup' : 'grups' }}</span></div>
             </header>
             <div class="outings-grid">
@@ -265,6 +267,7 @@ onBeforeUnmount(() => {
             </div>
           </section>
         </div>
+        </Transition>
 
         <footer class="kiosk-footer">
           <span class="connection-dot" :class="{ online }" aria-hidden="true"></span>

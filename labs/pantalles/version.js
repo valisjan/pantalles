@@ -1,6 +1,16 @@
-export const PANTALLES_VERSION = '1.2.0';
+export const PANTALLES_VERSION = '1.3.0';
 
 export const PANTALLES_RELEASES = [
+  {
+    version: '1.3.0',
+    date: '28 de setembre de 2026',
+    changes: [
+      'Cada hora es distingeix d’un cop d’ull: número de l’hora destacat i franja horària a cada targeta i a la barra de guàrdies per hora.',
+      'L’hora en curs mostra quants minuts en queden, amb una barra de progrés i un punt que batega.',
+      'El professorat que cobreix una guàrdia apareix com a «Professorat de guàrdia», amb una G si és de guàrdia o «Alliberat/ada» si ho és per una sortida.',
+      'Animacions suaus en canviar de dia o de vista, en aparèixer una absència nova i en actualitzar-se el resum.',
+    ],
+  },
   {
     version: '1.2.0',
     date: '28 de setembre de 2026',

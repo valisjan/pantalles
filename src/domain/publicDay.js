@@ -3,7 +3,7 @@
 
 export const ROW_STATUS_LABELS = Object.freeze({
   open: 'Sense cobrir',
-  covered: 'Preassignació',
+  covered: 'Professorat de guàrdia',
   coteacher: 'Queda amb el grup',
   returns: 'Torna al seu grup',
   'not-done': 'No realitzada',
@@ -29,6 +29,14 @@ export function rowCoverText(row) {
   const status = rowStatus(row);
   if (status === 'returns' || status === 'info') return 'Sense substitució';
   return 'Pendent';
+}
+
+// Qui cobreix una guàrdia: professorat de guàrdia (G) o alliberat per una sortida.
+export function rowSourceMark(row) {
+  if (!row?.assigned || row.coTeacher || row.cancelled) return '';
+  if (row.source === 'guard') return 'guard';
+  if (row.source === 'released') return 'released';
+  return '';
 }
 
 // Guàrdies que algú ha de fer (o fer-se càrrec) en una hora.

@@ -75,10 +75,36 @@ export function isSlotHour(slot, hourKey) {
   return hourKeyMinutes(hourKey) === slot.start;
 }
 
-// Una hora ja acabada: serveix per atenuar-la i deixar pas a la resta del dia.
-export function isPastHour(now, hourKey) {
-  const slot = hourKey === 'PATI'
+function slotForHourKey(hourKey) {
+  return hourKey === 'PATI'
     ? BELL_SCHEDULE.find((item) => item.key === 'PATI')
     : BELL_SCHEDULE.find((item) => item.start === hourKeyMinutes(hourKey));
+}
+
+function formatMinutes(total) {
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+// "8:00 – 8:55" per a una hora publicada; buit si no és una franja coneguda.
+export function hourRange(hourKey) {
+  const slot = slotForHourKey(hourKey);
+  return slot ? `${formatMinutes(slot.start)} – ${formatMinutes(slot.end)}` : '';
+}
+
+// Progrés d'una hora en curs (0-1) i minuts que en queden.
+export function hourProgress(now, hourKey) {
+  const slot = slotForHourKey(hourKey);
+  if (!slot) return null;
+  const minutes = minutesOf(now) + now.getSeconds() / 60;
+  if (minutes < slot.start || minutes >= slot.end) return null;
+  return {
+    ratio: (minutes - slot.start) / (slot.end - slot.start),
+    remaining: Math.ceil(slot.end - minutes),
+  };
+}
+
+// Una hora ja acabada: serveix per atenuar-la i deixar pas a la resta del dia.
+export function isPastHour(now, hourKey) {
+  const slot = slotForHourKey(hourKey);
   return Boolean(slot) && minutesOf(now) >= slot.end;
 }

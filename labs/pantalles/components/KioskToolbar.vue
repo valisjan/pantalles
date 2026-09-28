@@ -30,7 +30,8 @@ function counterLabel(session) {
     </div>
 
     <template v-if="dayControls">
-      <div v-if="sessions.length" class="session-counters" aria-label="Guàrdies per sessió">
+      <div v-if="sessions.length" class="session-counters" aria-label="Guàrdies per hora">
+        <span class="session-counters-label" aria-hidden="true">Guàrdies<br />per hora</span>
         <button
           v-for="session in sessions"
           :key="session.key"
@@ -46,8 +47,9 @@ function counterLabel(session) {
           :aria-label="counterLabel(session)"
           @click="emit('jump', session.key)"
         >
-          <span>{{ session.label }}</span>
-          <strong>{{ session.guards }} G</strong>
+          <strong class="counter-hour">{{ session.label }}</strong>
+          <span class="counter-time">{{ session.key }}</span>
+          <span v-if="session.guards" class="counter-count">{{ session.guards }} G</span>
         </button>
       </div>
       <div class="kiosk-actions">

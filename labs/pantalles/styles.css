@@ -392,11 +392,24 @@
     font-size: var(--text-sm);
   }
 
+  .session-counters-label {
+    padding: 0 6px 0 8px;
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.25;
+    text-transform: uppercase;
+  }
+
+  /* Cada botó és una hora: l'hora mana i el nombre de guàrdies és una xapa. */
   .session-counter {
+    position: relative;
     display: grid;
-    width: 3.5rem;
-    height: 3.5rem;
+    width: 3.75rem;
+    height: 3.75rem;
     place-content: center;
+    justify-items: center;
     gap: 3px;
     border: 1px solid transparent;
     border-radius: 12px;
@@ -404,18 +417,33 @@
     color: var(--text);
     padding: 0;
     line-height: 1;
+    transition: background-color 300ms ease, color 300ms ease, opacity 300ms ease;
   }
 
-  .session-counter span {
-    color: var(--muted);
-    font-size: var(--text-xs);
-    font-weight: 700;
-  }
-
-  .session-counter strong {
+  .counter-hour {
     font-family: var(--font-display);
-    font-size: var(--text-lg);
+    font-size: var(--text-xl);
     font-weight: 700;
+  }
+
+  .counter-time {
+    color: var(--muted);
+    font-size: 0.6875rem;
+    font-weight: 600;
+  }
+
+  .counter-count {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    min-width: 1.9rem;
+    border: 2px solid var(--surface);
+    border-radius: 999px;
+    background: var(--primary);
+    color: var(--on-primary);
+    padding: 3px 6px;
+    font-size: 0.6875rem;
+    font-weight: 800;
   }
 
   .session-counter.clear {
@@ -431,8 +459,13 @@
     color: var(--amber);
   }
 
-  .session-counter.clear span,
-  .session-counter.pending span { color: inherit; }
+  .session-counter.pending .counter-count {
+    background: var(--amber-dot);
+    color: #15171c;
+  }
+
+  .session-counter.clear .counter-time,
+  .session-counter.pending .counter-time { color: inherit; }
 
   .session-counter.past:not(.current) { opacity: 0.5; }
 
@@ -556,17 +589,51 @@
   }
 
   .hour-card-head {
+    position: relative;
     display: flex;
-    min-height: 3rem;
+    min-height: 3.25rem;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
     border-bottom: 1px solid var(--border);
     background: var(--surface-subtle);
-    padding: 10px 16px;
+    padding: 10px 16px 10px 12px;
   }
 
   .hour-card.empty .hour-card-head { border-bottom: 0; }
+
+  .hour-title {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .hour-title > div {
+    display: grid;
+    gap: 1px;
+  }
+
+  /* L'hora, ben visible a cada targeta: "1a", "2a"... */
+  .hour-badge {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--surface-strong);
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    transition: background-color 400ms ease, color 400ms ease;
+  }
+
+  .patio-card .hour-badge {
+    background: var(--green-soft);
+    color: var(--green);
+  }
 
   .hour-card-head h2 {
     margin: 0;
@@ -574,6 +641,32 @@
     font-size: var(--text-xl);
     font-weight: 700;
     letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+
+  .hour-range {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  /* Temps transcorregut de l'hora en curs */
+  .hour-progress {
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 4px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--primary) 16%, transparent);
+  }
+
+  .hour-progress span {
+    display: block;
+    height: 100%;
+    background: var(--primary);
+    transform-origin: left center;
+    transition: transform 1s ease;
   }
 
   .session-meta {
@@ -586,14 +679,31 @@
   }
 
   .now-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     border-radius: 999px;
     background: var(--primary);
     color: var(--on-primary);
-    padding: 5px 11px;
-    font-size: var(--text-xs);
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    padding: 6px 12px;
+    font-size: var(--text-sm);
+    font-weight: 700;
+  }
+
+  /* Punt "en directe" que batega suaument */
+  .now-badge::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: live-pulse 2s ease-out infinite;
+  }
+
+  @keyframes live-pulse {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 60%, transparent); }
+    70%,
+    100% { box-shadow: 0 0 0 7px transparent; }
   }
 
   .hour-card.current-session {
@@ -602,8 +712,13 @@
   }
 
   .hour-card.current-session .hour-card-head {
-    min-height: 3.5rem;
+    min-height: 3.75rem;
     background: var(--primary-soft);
+  }
+
+  .hour-card.current-session .hour-badge {
+    background: var(--primary);
+    color: var(--on-primary);
   }
 
   .hour-card.current-session .hour-card-head h2 { font-size: var(--text-2xl); }
@@ -819,6 +934,87 @@
   }
 
   .connection-dot.online { background: var(--green-dot); }
+
+  /* Qui cobreix: professorat de guàrdia (G) o alliberat per una sortida */
+  .source-mark {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: var(--text-xs);
+    font-weight: 800;
+    text-decoration: none;
+    vertical-align: 2px;
+  }
+
+  .source-mark.is-guard {
+    background: var(--primary);
+    color: var(--on-primary);
+  }
+
+  .source-mark.is-released {
+    background: var(--green-soft);
+    color: var(--green);
+  }
+
+  /* Franja amb els colors del logotip del centre */
+  .kiosk-header {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .kiosk-header::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: linear-gradient(90deg, #2346b5 0 33.33%, #25a857 33.33% 66.66%, #f0703c 66.66%);
+  }
+
+  /* Animacions: breus i suaus, només per acompanyar els canvis. */
+  .hour-card {
+    animation: card-in 480ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 45ms);
+  }
+
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(12px); }
+  }
+
+  .guard-row,
+  .guard-row::before { transition: background-color 500ms ease; }
+
+  .row-enter-active { transition: opacity 420ms ease, transform 420ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+  .row-enter-from { opacity: 0; transform: translateX(-10px); }
+  .row-leave-active { transition: opacity 240ms ease; }
+  .row-leave-to { opacity: 0; }
+
+  .view-enter-active,
+  .view-leave-active { transition: opacity 220ms ease, transform 220ms ease; }
+  .view-enter-from { opacity: 0; transform: translateY(8px); }
+  .view-leave-to { opacity: 0; }
+
+  .kpi-value {
+    display: inline-block;
+    animation: kpi-pop 450ms cubic-bezier(0.2, 0.9, 0.3, 1.25) backwards;
+  }
+
+  @keyframes kpi-pop {
+    from { opacity: 0; transform: scale(0.6); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hour-card,
+    .kpi-value,
+    .now-badge::before { animation: none; }
+
+    .row-enter-active,
+    .row-leave-active,
+    .view-enter-active,
+    .view-leave-active,
+    .hour-progress span { transition: none; }
+  }
 
   @container kiosk (min-width: 1150px) {
     .day-content { display: block; column-count: 2; column-gap: 14px; }

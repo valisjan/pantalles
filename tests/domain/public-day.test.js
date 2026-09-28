@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { daySummary, hourSummary, rowCoverText, rowStatus, shortHourLabel } from '../../src/domain/publicDay.js';
+import { daySummary, hourSummary, rowCoverText, rowSourceMark, rowStatus, shortHourLabel } from '../../src/domain/publicDay.js';
 import { normalizeCanvaUrl, normalizeDriveUrl } from '../../src/domain/embeds.js';
 
 const rows = {
@@ -43,4 +43,14 @@ test('converteix enllaços de Drive i Canva en adreces inseribles', () => {
   assert.equal(normalizeDriveUrl('https://example.com/file/d/1AbC/view'), '');
   assert.match(normalizeCanvaUrl('<iframe src="https://www.canva.com/design/ABC/view"></iframe>'), /canva\.com\/design\/ABC\/view\?embed=/);
   assert.equal(normalizeCanvaUrl('http://www.canva.com/design/ABC/view'), '');
+});
+
+test('distingeix el professorat de guàrdia (G) del professorat alliberat', () => {
+  assert.equal(rowSourceMark({ assigned: 'Pere', source: 'guard' }), 'guard');
+  assert.equal(rowSourceMark({ assigned: 'Joana', source: 'released' }), 'released');
+  assert.equal(rowSourceMark({ assigned: 'Llucia', source: 'co-teacher', coTeacher: true }), '');
+  assert.equal(rowSourceMark({ assigned: 'Pere', source: 'guard', cancelled: true }), '');
+  assert.equal(rowSourceMark({ assigned: '', source: '' }), '');
+  // Jornades publicades abans d'afegir l'origen: sense marca.
+  assert.equal(rowSourceMark({ assigned: 'Pere' }), '');
 });

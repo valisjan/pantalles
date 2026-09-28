@@ -169,7 +169,8 @@ test('cada cobertura mostra el mateix estat que el full de guàrdies', async ({ 
       key: '11:15', kind: 'guardies', label: '4a hora · 11:15',
       rows: [
         row('A', {}),
-        row('B', { assigned: 'Pere Blanes' }),
+        row('B', { assigned: 'Pere Blanes', source: 'guard' }),
+        row('G', { assigned: 'Aina Roig', source: 'released' }),
         row('C', { assigned: 'Joana Mas', coTeacher: true }),
         row('D', { group: '1ESO-E + 1ESO-F', subject: 'MAT-EF-1E', returnsToGroup: true }),
         row('E', { group: 'Guàrdia', subject: 'Guàrdia', room: '' }),
@@ -183,14 +184,19 @@ test('cada cobertura mostra el mateix estat que el full de guàrdies', async ({ 
   await expect(rows.filter({ hasText: 'Docent A' })).toHaveClass(/status-open/);
   await expect(rows.filter({ hasText: 'Docent A' })).toContainText('Pendent');
   await expect(rows.filter({ hasText: 'Docent B' })).toHaveClass(/status-covered/);
+  await expect(rows.filter({ hasText: 'Docent B' })).toContainText('Professorat de guàrdia');
+  await expect(rows.filter({ hasText: 'Docent B' }).locator('.source-mark.is-guard')).toHaveText('G');
+  await expect(rows.filter({ hasText: 'Docent G' }).locator('.source-mark.is-released')).toHaveText('Alliberat/ada');
+  await expect(rows.filter({ hasText: 'Docent C' }).locator('.source-mark')).toHaveCount(0);
   await expect(rows.filter({ hasText: 'Docent C' })).toContainText('Queda amb el grup');
   await expect(rows.filter({ hasText: 'Docent D' })).toContainText('Torna al seu grup');
   await expect(rows.filter({ hasText: 'Docent D' })).toContainText('Sense substitució');
   await expect(rows.filter({ hasText: 'Docent E' })).toHaveClass(/status-info/);
   await expect(rows.filter({ hasText: 'Docent F' })).toContainText('No realitzada');
 
-  // Només la A i la B demanen algú que faci la guàrdia; la A encara no té ningú.
-  await expect(page.getByRole('button', { name: '4a: 2 guàrdies, 1 sense cobrir' })).toHaveClass(/pending/);
+  // Només la A, la B i la G demanen algú que faci la guàrdia; la A encara no té ningú.
+  await expect(page.getByRole('button', { name: '4a: 3 guàrdies, 1 sense cobrir' })).toHaveClass(/pending/);
+  await expect(page.getByRole('button', { name: '4a: 3 guàrdies, 1 sense cobrir' }).locator('.counter-count')).toHaveText('3 G');
   await expect(page.locator('.kiosk-kpi.is-open')).toContainText('1guàrdia sense cobrir');
 });
 

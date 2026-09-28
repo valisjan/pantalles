@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   currentSlot,
   hourKeyMinutes,
+  hourProgress,
+  hourRange,
   isPastHour,
   isSlotHour,
   isWeekend,
@@ -40,4 +42,12 @@ test('relaciona les claus publicades amb la franja encara que portin zero inicia
   assert.equal(isPastHour(at('09:00'), '8:00'), true);
   assert.equal(isPastHour(at('09:00'), '8:55'), false);
   assert.equal(isPastHour(at('11:20'), 'PATI'), true);
+});
+
+test('dona la franja i el progrés de l\'hora en curs', () => {
+  assert.equal(hourRange('8:00'), '8:00 – 8:55');
+  assert.equal(hourRange('PATI'), '10:45 – 11:15');
+  assert.equal(hourRange('16:00'), '');
+  assert.deepEqual(hourProgress(at('11:32'), '11:15'), { ratio: 17 / 55, remaining: 38 });
+  assert.equal(hourProgress(at('11:32'), '8:00'), null);
 });

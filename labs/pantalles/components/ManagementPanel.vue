@@ -1,7 +1,17 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { normalizeCanvaUrl, normalizeDriveUrl } from '../../../src/domain/embeds.js';
+import {
+  SCHEDULE_STATUS_LABELS,
+  normalizeSchedule,
+  playlistFor,
+  scheduleForTomorrow,
+  scheduleStatus,
+  viewHasContent,
+} from '../../../src/domain/schedule.js';
+import { useClock } from '../composables/useClock.js';
 import ReleaseNotes from './ReleaseNotes.vue';
+import ScheduleEditor from './ScheduleEditor.vue';
 
 // La configuració es modifica al lloc i `save` en programa el desament.
 const props = defineProps({
@@ -19,6 +29,7 @@ const VIEW_TYPES = [
   { type: 'guardies', name: 'Guàrdies', help: 'Full, pati i sortides', defaultName: 'Guàrdies del dia' },
   { type: 'drive', name: 'Google Drive', help: 'Imatge, PDF o presentació', defaultName: 'Contingut de Drive' },
   { type: 'canva', name: 'Canva', help: 'Presentació sempre actualitzada', defaultName: 'Presentació Canva' },
+  { type: 'text', name: 'Anunci', help: 'Text gran a pantalla completa', defaultName: 'Avís' },
 ];
 const DURATIONS = [
   { value: 10, label: '10 segons' },
@@ -29,6 +40,7 @@ const DURATIONS = [
   { value: 120, label: '2 minuts' },
 ];
 
+const { minute } = useClock();
 const tab = ref('views');
 const showTypePicker = ref(false);
 const linkError = ref('');
@@ -52,11 +64,25 @@ function uniqueViewId() {
   return id;
 }
 
+// Estat de cada vista a la llista: què passa ara a la pantalla amb ella.
+const onScreen = computed(() => new Set(playlistFor(views.value, props.config.forcedViewId, minute.value).map((view) => view.id)));
+function viewBadge(view) {
+  if (!viewHasContent(view)) return { tone: 'empty', label: 'Sense contingut' };
+  const status = scheduleStatus(view.schedule, minute.value);
+  const shown = onScreen.value.has(view.id);
+  // Una vista activa pot quedar tapada per un anunci que ocupa la pantalla.
+  if ((status === 'active' || status === 'always') && !shown) return { tone: 'held', label: 'En espera' };
+  if (status === 'always') return null;
+  return { tone: status, label: SCHEDULE_STATUS_LABELS[status] };
+}
+
 function addView(type) {
   const id = uniqueViewId();
   const kind = VIEW_TYPES.find((item) => item.type === type);
   props.config.views.push({
-    id, name: kind.defaultName, duration: 20, modules: ['guardies', 'pati', 'sortides'], type, driveUrl: '', canvaUrl: '',
+    id, name: kind.defaultName, duration: 20, modules: ['guardies', 'pati', 'sortides'], type, driveUrl: '', canvaUrl: '', text: '',
+    // El contingut nou queda programat per a demà fins que se'n triï el moment.
+    schedule: normalizeSchedule(type === 'guardies' ? {} : scheduleForTomorrow(minute.value)),
   });
   editingViewId.value = id;
   showTypePicker.value = false;
@@ -178,7 +204,8 @@ async function copyKioskUrl() {
           <div v-for="(view, index) in views" :key="view.id" class="view-list-row" :class="{ selected: editingView?.id === view.id }">
             <button type="button" class="view-select" role="tab" :aria-selected="editingView?.id === view.id" @click="editingViewId = view.id">
               <strong>{{ view.name }}</strong>
-              <span v-if="!config.forcedViewId">{{ view.duration }} s</span>
+              <span v-if="viewBadge(view)" class="view-badge" :class="`is-${viewBadge(view).tone}`">{{ viewBadge(view).label }}</span>
+              <span v-else-if="!config.forcedViewId">{{ view.duration }} s</span>
             </button>
             <button type="button" class="icon-button" aria-label="Mou la vista cap amunt" :disabled="index === 0" @click="moveView(index, -1)">↑</button>
             <button type="button" class="icon-button" aria-label="Mou la vista cap avall" :disabled="index === views.length - 1" @click="moveView(index, 1)">↓</button>
@@ -207,6 +234,7 @@ async function copyKioskUrl() {
             <div class="type-help">
               <strong>Google Drive</strong>
               <span>A Drive, prem Compartir › Accés general › Qualsevol persona amb l’enllaç › Lector. Copia l’enllaç i enganxa’l aquí.</span>
+              <span>Si la pantalla és vertical, fes el contingut en format vertical (1080 × 1920) perquè l’ocupi sencera.</span>
             </div>
             <label>Enllaç de Drive
               <textarea v-model="editingView.driveUrl" rows="3" placeholder="Enganxa aquí l’enllaç compartit" @change="saveLink('driveUrl', normalizeDriveUrl, 'Enganxa un enllaç compartit de Google Drive vàlid.')"></textarea>
@@ -217,11 +245,24 @@ async function copyKioskUrl() {
             <div class="type-help">
               <strong>Canva</strong>
               <span>A Canva, obre Compartir › Insereix, copia el codi i enganxa’l aquí.</span>
+              <span>Si la pantalla és vertical, fes el disseny en format vertical (1080 × 1920) perquè l’ocupi sencera.</span>
             </div>
             <label>Enllaç o codi d’inserció
               <textarea v-model="editingView.canvaUrl" rows="3" placeholder="Enganxa aquí el codi de Canva" @change="saveLink('canvaUrl', normalizeCanvaUrl, 'Enganxa un enllaç o un codi d’inserció de Canva vàlid.')"></textarea>
             </label>
           </template>
+
+          <template v-else-if="editingView.type === 'text'">
+            <div class="type-help">
+              <strong>Anunci</strong>
+              <span>El nom de la vista fa de títol i el text es mostra en gran. Ideal per a avisos puntuals.</span>
+            </div>
+            <label>Text de l’anunci
+              <textarea v-model="editingView.text" rows="5" maxlength="600" placeholder="Per exemple: Simulacre d’evacuació a les 12.00 h. Seguiu les indicacions del professorat." @input="save"></textarea>
+            </label>
+          </template>
+
+          <ScheduleEditor v-if="several" :view="editingView" @save="save" />
 
           <p v-if="linkError" class="form-error">{{ linkError }}</p>
           <button v-if="several" type="button" class="danger-button" @click="removeView(editingView.id)">Elimina la vista</button>

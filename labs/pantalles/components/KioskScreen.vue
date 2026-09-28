@@ -10,6 +10,7 @@ import {
   shiftIsoDate,
 } from '../../../src/domain/calendar.js';
 import { daySummary, hourSummary, isPatioHour, shortHourLabel } from '../../../src/domain/publicDay.js';
+import { playlistFor } from '../../../src/domain/schedule.js';
 import { DEFAULT_SCREEN_CONFIG } from '../../../src/services/pantallesStorage.js';
 import { useClock } from '../composables/useClock.js';
 import { usePageState } from '../composables/usePageState.js';
@@ -18,6 +19,7 @@ import HourCard from './HourCard.vue';
 import KioskHeader from './KioskHeader.vue';
 import KioskToolbar from './KioskToolbar.vue';
 import MediaView from './MediaView.vue';
+import NoticeView from './NoticeView.vue';
 
 const props = defineProps({
   config: { type: Object, required: true },
@@ -34,69 +36,91 @@ const preview = computed(() => Boolean(props.previewViewId));
 const { minute } = useClock();
 const { online } = usePageState();
 
-// Data i mida del text: qualsevol canvi tàctil és temporal i torna a la
-// configuració de la pantalla al cap d'una estona sense tocar-la.
+// Algú fa servir la pantalla: mentre toca, res no canvia sol (ni la vista ni
+// el desplaçament). Al cap de 90 s sense tocar-la, tot torna a l'estat normal.
+const interacting = ref(false);
+const manualViewId = ref('');
 const localDate = ref('');
 const localScale = ref(null);
 let idleTimer = null;
+
+function registerInteraction() {
+  interacting.value = true;
+  window.clearTimeout(idleTimer);
+  idleTimer = window.setTimeout(() => {
+    interacting.value = false;
+    localDate.value = '';
+    localScale.value = null;
+    manualViewId.value = '';
+  }, IDLE_RESET_MS);
+}
+
 const today = computed(() => localDateString(minute.value));
 const selectedDate = computed(() => localDate.value || props.queryDate || today.value);
 const selectedCourse = computed(() => props.queryCourse || props.config.courseId || DEFAULT_SCREEN_CONFIG.courseId);
 const scale = computed(() => localScale.value ?? props.config.scale ?? 100);
 const viewingToday = computed(() => selectedDate.value === today.value);
-
-function resetLocalViewSoon() {
-  window.clearTimeout(idleTimer);
-  idleTimer = window.setTimeout(() => {
-    localDate.value = '';
-    localScale.value = null;
-  }, IDLE_RESET_MS);
-}
+// Només s'avisa quan algú ha canviat de dia a la pantalla, no amb una data fixada a l'adreça.
+const browsingOtherDay = computed(() => Boolean(localDate.value) && !viewingToday.value);
 
 function shiftDay(amount) {
   localDate.value = shiftIsoDate(selectedDate.value, amount);
-  resetLocalViewSoon();
+  registerInteraction();
 }
 
 function returnToday() {
   localDate.value = today.value;
-  resetLocalViewSoon();
+  registerInteraction();
 }
 
 function changeScale(amount) {
   localScale.value = Math.min(140, Math.max(80, scale.value + amount));
-  resetLocalViewSoon();
+  registerInteraction();
 }
 
 function resetScale() {
   localScale.value = null;
-  resetLocalViewSoon();
+  registerInteraction();
 }
 
-// Vistes: rotació automàtica o vista fixa.
+// Vistes: les que toquen ara segons la programació, alternades o fixes.
 const views = computed(() => (Array.isArray(props.config.views) ? props.config.views : []));
+const playlist = computed(() => playlistFor(views.value, props.config.forcedViewId, minute.value));
+const playlistKey = computed(() => playlist.value.map((view) => view.id).join('|'));
 const rotationIndex = ref(0);
 let rotationTimer = null;
 const activeView = computed(() => {
   if (preview.value) return views.value.find((view) => view.id === props.previewViewId) || views.value[0] || null;
-  const forced = views.value.find((view) => view.id === props.config.forcedViewId);
-  return forced || views.value[rotationIndex.value % Math.max(views.value.length, 1)] || null;
+  const manual = playlist.value.find((view) => view.id === manualViewId.value);
+  return manual || playlist.value[rotationIndex.value % Math.max(playlist.value.length, 1)] || null;
 });
 const viewType = computed(() => activeView.value?.type || 'guardies');
+const switcherViews = computed(() => (preview.value ? [] : playlist.value.map(({ id, name }) => ({ id, name }))));
+
+function selectView(id) {
+  manualViewId.value = id;
+  registerInteraction();
+}
 
 function scheduleRotation() {
   window.clearTimeout(rotationTimer);
-  if (preview.value || props.config.forcedViewId || views.value.length < 2) return;
+  if (preview.value || interacting.value || playlist.value.length < 2) return;
   const seconds = Math.min(300, Math.max(5, Number(activeView.value?.duration) || 20));
   rotationTimer = window.setTimeout(() => {
-    rotationIndex.value = (rotationIndex.value + 1) % views.value.length;
+    rotationIndex.value = (rotationIndex.value + 1) % playlist.value.length;
   }, seconds * 1000);
 }
-watch([views, () => props.config.forcedViewId, rotationIndex], scheduleRotation, { deep: true, immediate: true });
+// Quan comença o acaba una programació, la vista nova surt de seguida.
+watch(playlistKey, () => {
+  rotationIndex.value = 0;
+  manualViewId.value = '';
+});
+watch([playlistKey, rotationIndex, interacting, () => activeView.value?.duration], scheduleRotation, { immediate: true });
 
 // Una configuració nova (des de la gestió) torna a començar la pantalla.
 watch(() => props.configRevision, () => {
   rotationIndex.value = 0;
+  manualViewId.value = '';
   localDate.value = '';
   localScale.value = null;
 });
@@ -121,15 +145,22 @@ const sessions = computed(() => hours.value
 const ready = computed(() => !props.configLoading && !dayLoading.value);
 
 const scroller = ref(null);
-function centerHour(key, behavior = 'smooth') {
+function centerHour(key) {
   nextTick(() => {
     const card = Array.from(scroller.value?.querySelectorAll('.hour-card') || [])
       .find((element) => element.dataset.hourKey === String(key));
-    card?.scrollIntoView({ behavior, block: 'center', inline: 'nearest' });
+    card?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
   });
 }
-watch([() => slot.value?.key, day, viewType], () => {
-  if (preview.value || viewType.value !== 'guardies' || !slot.value) return;
+
+function jumpToHour(key) {
+  registerInteraction();
+  centerHour(key);
+}
+
+// La sessió actual es posa al centre, però mai mentre algú llegeix la pantalla.
+watch([() => slot.value?.key, day, viewType, interacting], () => {
+  if (preview.value || interacting.value || viewType.value !== 'guardies' || !slot.value) return;
   const hour = hours.value.find(isCurrent);
   if (hour) centerHour(hour.key);
 });
@@ -144,9 +175,12 @@ onBeforeUnmount(() => {
   <section
     ref="scroller"
     class="kiosk"
-    :class="config.theme === 'dark' ? 'dark' : 'light'"
+    :class="[config.theme === 'dark' ? 'dark' : 'light', { 'is-preview': preview, 'is-interacting': interacting }]"
     :style="{ '--display-scale': scale / 100 }"
     aria-live="polite"
+    @pointerdown.passive="registerInteraction"
+    @wheel.passive="registerInteraction"
+    @keydown="registerInteraction"
   >
     <div class="kiosk-inner">
       <div v-if="!online" class="kiosk-banner is-offline">Sense connexió · es mostra la darrera informació disponible</div>
@@ -159,41 +193,51 @@ onBeforeUnmount(() => {
       <template v-else>
         <KioskHeader :title="activeView?.name || 'Pantalla informativa'" :screen-name="config.name" :date-label="formatLongDate(selectedDate)" />
 
-        <template v-if="viewType === 'guardies'">
-          <div v-if="ready && day" class="kiosk-summary" aria-label="Resum de la jornada">
-            <div class="kiosk-kpi" :class="summary.open ? 'is-open' : 'is-covered'">
-              <strong>{{ summary.open }}</strong>
-              <span>{{ summary.open === 1 ? 'guàrdia sense cobrir' : 'guàrdies sense cobrir' }}</span>
-            </div>
-            <div class="kiosk-kpi">
-              <strong>{{ summary.guards }}</strong>
-              <span>{{ summary.guards === 1 ? 'guàrdia' : 'guàrdies' }}</span>
-            </div>
-            <div class="kiosk-kpi">
-              <strong>{{ summary.absences }}</strong>
-              <span>{{ summary.absences === 1 ? 'absència' : 'absències' }}</span>
-            </div>
-            <div v-if="summary.outings" class="kiosk-kpi">
-              <strong>{{ summary.outings }}</strong>
-              <span>{{ summary.outings === 1 ? 'grup fora' : 'grups fora' }}</span>
-            </div>
-          </div>
+        <div v-if="viewType === 'guardies' && browsingOtherDay" class="kiosk-banner other-day" role="status">
+          <span>Estàs veient el full del <strong>{{ formatLongDate(selectedDate).toLowerCase() }}</strong></span>
+          <button type="button" @click="returnToday">Torna a avui</button>
+        </div>
 
-          <KioskToolbar
-            :sessions="ready && day ? sessions : []"
-            :scale="scale"
-            :is-today="viewingToday"
-            @jump="centerHour"
-            @shift-day="shiftDay"
-            @today="returnToday"
-            @scale="changeScale"
-            @reset-scale="resetScale"
-          />
-        </template>
+        <div v-if="viewType === 'guardies' && ready && day" class="kiosk-summary" aria-label="Resum de la jornada">
+          <div class="kiosk-kpi" :class="summary.open ? 'is-open' : 'is-covered'">
+            <strong>{{ summary.open }}</strong>
+            <span>{{ summary.open === 1 ? 'guàrdia sense cobrir' : 'guàrdies sense cobrir' }}</span>
+          </div>
+          <div class="kiosk-kpi">
+            <strong>{{ summary.guards }}</strong>
+            <span>{{ summary.guards === 1 ? 'guàrdia' : 'guàrdies' }}</span>
+          </div>
+          <div class="kiosk-kpi">
+            <strong>{{ summary.absences }}</strong>
+            <span>{{ summary.absences === 1 ? 'absència' : 'absències' }}</span>
+          </div>
+          <div v-if="summary.outings" class="kiosk-kpi">
+            <strong>{{ summary.outings }}</strong>
+            <span>{{ summary.outings === 1 ? 'grup fora' : 'grups fora' }}</span>
+          </div>
+        </div>
+
+        <KioskToolbar
+          v-if="viewType === 'guardies' || switcherViews.length > 1"
+          :day-controls="viewType === 'guardies'"
+          :sessions="ready && day ? sessions : []"
+          :scale="scale"
+          :is-today="viewingToday"
+          :views="switcherViews"
+          :active-view-id="activeView?.id || ''"
+          @jump="jumpToHour"
+          @shift-day="shiftDay"
+          @today="returnToday"
+          @scale="changeScale"
+          @reset-scale="resetScale"
+          @select-view="selectView"
+        />
 
         <p v-if="config.message" class="kiosk-banner screen-message">{{ config.message }}</p>
 
-        <MediaView v-if="viewType !== 'guardies' && activeView" :view="activeView" />
+        <NoticeView v-if="viewType === 'text' && activeView" :view="activeView" />
+
+        <MediaView v-else-if="viewType !== 'guardies' && activeView" :view="activeView" />
 
         <section v-else-if="!ready" class="kiosk-state">
           <span class="spinner" aria-hidden="true"></span>

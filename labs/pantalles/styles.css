@@ -147,6 +147,18 @@
     font-family: var(--font-body);
   }
 
+  /* Ús tàctil: res no se selecciona ni s'amplia per accident, i el
+     desplaçament vertical continua funcionant amb el dit. */
+  .kiosk:not(.is-preview) {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: pan-y;
+  }
+
+  .kiosk-mode,
+  .kiosk-mode body { overscroll-behavior: none; }
+
   .kiosk-inner {
     display: grid;
     min-height: calc(100vh / var(--display-scale));
@@ -448,6 +460,86 @@
     font-size: var(--text-md);
   }
 
+  .kiosk-banner.other-day {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    border-color: var(--primary-border);
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+    font-weight: 600;
+  }
+
+  .kiosk-banner.other-day button {
+    min-height: 3rem;
+    border: 0;
+    border-radius: 12px;
+    background: var(--primary);
+    color: var(--on-primary);
+    padding: 0 18px;
+    font-size: var(--text-md);
+    font-weight: 700;
+  }
+
+  /* Selector de vistes quan n'hi ha més d'una en marxa */
+  .view-switcher {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    padding: 5px;
+    box-shadow: var(--shadow);
+  }
+
+  .view-switcher button {
+    min-height: 3rem;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--muted);
+    padding: 0 16px;
+    font-size: var(--text-md);
+    font-weight: 700;
+  }
+
+  .view-switcher button.active {
+    background: var(--primary);
+    color: var(--on-primary);
+  }
+
+  /* Anunci a pantalla completa */
+  .notice-view {
+    display: grid;
+    min-height: calc(100vh - 16rem);
+    place-content: center;
+    border: 1px solid var(--border);
+    border-left: 12px solid var(--primary);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: clamp(24px, 5vw, 80px);
+    box-shadow: var(--shadow);
+  }
+
+  .notice-view p {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 6cqi, 5rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    text-wrap: balance;
+    white-space: pre-line;
+  }
+
+  .notice-empty {
+    color: var(--muted);
+    text-align: center;
+  }
+
   /* Hores del dia. En pantalles apaïsades amples, dues columnes en ordre. */
   .day-content {
     display: grid;
@@ -735,6 +827,17 @@
 
   @media (orientation: portrait) {
     .kiosk-brand h1 { font-size: var(--text-2xl); }
+  }
+
+  /* Pantalla vertical: els controls tàctils van a baix, a l'abast de la mà. */
+  @media (orientation: portrait) and (min-width: 721px) {
+    .kiosk-toolbar {
+      order: 20;
+      top: auto;
+      bottom: 10px;
+    }
+
+    .kiosk-footer { order: 30; }
   }
 
   @media (max-width: 720px) {
@@ -1319,6 +1422,103 @@
     font-size: var(--text-sm);
     line-height: 1.5;
   }
+
+  /* Programació de vistes */
+  .schedule-editor {
+    display: grid;
+    min-width: 0;
+    gap: 12px;
+    margin: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px 14px;
+  }
+
+  .schedule-editor legend {
+    padding: 0 6px;
+    font-weight: 700;
+  }
+
+  .schedule-quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .chip-button {
+    min-height: 32px;
+    border: 1px solid var(--primary-border);
+    border-radius: 999px;
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+    padding: 0 12px;
+    font-size: var(--text-sm);
+    font-weight: 700;
+  }
+
+  .chip-button:hover { border-color: var(--primary); }
+
+  .management-panel label small,
+  .weekday-picker small {
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .weekday-picker {
+    display: grid;
+    gap: 6px;
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .weekday-picker > div {
+    display: flex;
+    gap: 4px;
+  }
+
+  .weekday-picker button {
+    min-height: 34px;
+    flex: 1 1 0;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: var(--text-sm);
+    font-weight: 700;
+  }
+
+  .weekday-picker button.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--on-primary);
+  }
+
+  .schedule-summary {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    border-radius: var(--radius-small);
+    background: var(--surface-subtle);
+    padding: 10px 12px;
+  }
+
+  .schedule-summary strong { font-size: var(--text-sm); }
+  .schedule-summary.is-active { background: var(--green-soft); color: var(--green); }
+  .schedule-summary.is-waiting { background: var(--primary-soft); color: var(--primary-strong); }
+  .schedule-summary.is-expired { background: var(--surface-strong); color: var(--muted); }
+
+  .view-select .view-badge {
+    border-radius: 999px;
+    background: var(--surface-strong);
+    padding: 3px 8px;
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-weight: 700;
+  }
+
+  .view-select .view-badge.is-active { background: var(--green-soft); color: var(--green); }
+  .view-select .view-badge.is-waiting { background: var(--primary-soft); color: var(--primary-strong); }
 
   @media (max-width: 900px) {
     .management-layout { display: block; }

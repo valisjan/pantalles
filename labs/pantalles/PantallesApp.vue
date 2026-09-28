@@ -13,6 +13,8 @@ const screenId = params.get('pantalla') || DEFAULT_SCREEN_ID;
 const managementMode = params.get('gestio') === '1';
 const queryCourse = params.get('curs') || '';
 const queryDate = isIsoDate(params.get('data')) ? params.get('data') : '';
+// El quiosc és tàctil: sense zoom ni selecció accidentals ni "estirar per recarregar".
+if (!managementMode) document.documentElement.classList.add('kiosk-mode');
 
 const adminReady = ref(!managementMode);
 const adminAllowed = ref(false);

@@ -6,7 +6,7 @@ Comparteix el projecte Firebase `quota-e1424` amb Quota i Guàrdies, de manera q
 
 ## Estructura
 
-- `src/domain/`: lògica pura i provada (dates i franges, estats de cada cobertura, enllaços de Drive i Canva).
+- `src/domain/`: lògica pura i provada (dates i franges, estats de cada cobertura, programació de vistes, enllaços de Drive i Canva).
 - `src/services/`: Firebase, sessió i configuració de les pantalles.
 - `labs/pantalles/composables/`: rellotge compartit, estat de la pestanya, configuració i jornada publicada.
 - `labs/pantalles/components/`: quiosc (`KioskScreen` i peces) i gestió (`AppTopBar`, `ManagementPanel`).

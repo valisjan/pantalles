@@ -1,6 +1,18 @@
-export const PANTALLES_VERSION = '1.1.0';
+export const PANTALLES_VERSION = '1.2.0';
 
 export const PANTALLES_RELEASES = [
+  {
+    version: '1.2.0',
+    date: '28 de setembre de 2026',
+    changes: [
+      'Programació de vistes: sempre o en un moment concret (un dia, uns quants dies, unes hores o cada setmana), amb accessos ràpids per mostrar-la ara.',
+      'Una vista programada pot ocupar tota la pantalla mentre dura o alternar-se amb les altres.',
+      'Nova vista «Anunci»: text gran a pantalla completa per a avisos puntuals.',
+      'Ús tàctil: mentre algú toca la pantalla no canvia de vista ni es desplaça sola; al cap de 90 s torna a l’estat normal.',
+      'Selector de vistes a la pantalla i avís clar quan es mira un altre dia.',
+      'En pantalles verticals, els controls tàctils queden a baix, a l’abast de la mà.',
+    ],
+  },
   {
     version: '1.1.0',
     date: '28 de setembre de 2026',

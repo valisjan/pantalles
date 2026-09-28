@@ -216,3 +216,98 @@ test('la gestió mostra la barra comuna i la vista prèvia de la vista que s\'ed
   await page.getByLabel('Avís a la pantalla').fill('Simulacre a les 12.00 h');
   await expect(page.locator('.management-preview .screen-message')).toHaveText('Simulacre a les 12.00 h');
 });
+
+async function seedViews(page, views) {
+  await page.addInitScript(({ day, views }) => {
+    localStorage.setItem('quota-e2e-pantalla:sala-professorat', JSON.stringify({
+      schemaVersion: 1, name: 'Sala de professorat', active: true, courseId: 'e2e-2026', theme: 'light', scale: 100, views,
+    }));
+    localStorage.setItem('quota-e2e-guardies:e2e-2026', JSON.stringify({ publicDays: { '2026-09-11': day } }));
+  }, { day: publicDay, views });
+}
+
+const guardiesView = { id: 'guardies', name: 'Guàrdies del dia', type: 'guardies', duration: 10 };
+
+test('un anunci programat ocupa la pantalla només durant la seva franja', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-09-11T13:45:00+02:00'));
+  await seedViews(page, [guardiesView, {
+    id: 'claustre', name: 'Claustre', type: 'text', text: 'Claustre a la biblioteca a les 14.00 h',
+    schedule: { mode: 'scheduled', from: '2026-09-11', start: '13:30', end: '14:30', exclusive: true },
+  }]);
+  await page.goto('/?pantalla=sala-professorat');
+
+  await expect(page.locator('.notice-view')).toHaveText('Claustre a la biblioteca a les 14.00 h');
+  await expect(page.getByRole('heading', { name: 'Claustre' })).toBeVisible();
+  await expect(page.locator('.view-switcher')).toHaveCount(0);
+
+  await page.clock.setFixedTime(new Date('2026-09-11T14:31:00+02:00'));
+  await expect(page.getByRole('heading', { name: 'Guàrdies del dia' })).toBeVisible({ timeout: 3_000 });
+  await expect(page.locator('.notice-view')).toHaveCount(0);
+});
+
+test('tocar la pantalla atura la rotació fins que ningú no la fa servir', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-09-11T09:00:00+02:00') });
+  await seedViews(page, [guardiesView, { id: 'avis', name: 'Benvinguda', type: 'text', text: 'Benvinguts', duration: 10 }]);
+  await page.goto('/?pantalla=sala-professorat');
+
+  const active = page.locator('.view-switcher button.active');
+  await expect(active).toHaveText('Guàrdies del dia');
+  await page.clock.runFor(10_500);
+  await expect(active).toHaveText('Benvinguda');
+
+  await page.locator('.view-switcher').getByRole('tab', { name: 'Guàrdies del dia' }).click();
+  await page.clock.runFor(60_000);
+  await expect(active).toHaveText('Guàrdies del dia');
+
+  // Passats 90 s sense tocar-la, torna a alternar les vistes sola.
+  await page.clock.runFor(40_000);
+  const before = await active.textContent();
+  await page.clock.runFor(10_500);
+  await expect(active).not.toHaveText(before);
+});
+
+test('avisa quan es mira un altre dia i hi torna amb un toc', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-09-11T09:00:00+02:00'));
+  await seedScreen(page);
+  await page.goto('/?pantalla=sala-professorat');
+
+  await expect(page.locator('.other-day')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Dia següent' }).click();
+  await expect(page.locator('.other-day')).toContainText('dissabte, 12 de setembre');
+  await page.locator('.other-day').getByRole('button', { name: 'Torna a avui' }).click();
+  await expect(page.locator('.other-day')).toHaveCount(0);
+  await expect(page.getByText('Maria Sureda')).toBeVisible();
+});
+
+test('en una pantalla vertical els controls tàctils queden a baix', async ({ page }) => {
+  await page.setViewportSize({ width: 1080, height: 1920 });
+  await seedScreen(page);
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+
+  const toolbar = await page.locator('.kiosk-toolbar').boundingBox();
+  const header = await page.locator('.kiosk-header').boundingBox();
+  expect(toolbar.y).toBeGreaterThan(header.y + header.height + 200);
+  expect(toolbar.y + toolbar.height).toBeLessThanOrEqual(1920);
+});
+
+test('la gestió programa un anunci per ara amb un sol toc', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-09-11T10:05:00+02:00'));
+  await seedScreen(page);
+  await page.goto('/?gestio=1&pantalla=sala-professorat');
+
+  await page.getByRole('button', { name: '+ Nova vista' }).click();
+  await page.locator('.view-type-picker').getByRole('button', { name: /Anunci/ }).click();
+  await page.getByLabel('Text de l’anunci').fill('Simulacre a les 12.00 h');
+  // El contingut nou queda per a demà fins que se'n tria el moment.
+  await expect(page.locator('.schedule-summary')).toContainText('Programada');
+  await page.getByRole('button', { name: 'Ara · 1 hora' }).click();
+  await expect(page.locator('.schedule-summary')).toContainText('Ara en pantalla');
+  await expect(page.locator('.schedule-summary')).toContainText('10:05–11:05');
+
+  await expect.poll(async () => page.evaluate(() => (
+    JSON.parse(localStorage.getItem('quota-e2e-pantalla:sala-professorat')).views?.find((view) => view.type === 'text') || null
+  ))).toMatchObject({
+    text: 'Simulacre a les 12.00 h',
+    schedule: { mode: 'scheduled', from: '2026-09-11', start: '10:05', end: '11:05', exclusive: true },
+  });
+});

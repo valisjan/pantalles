@@ -1,5 +1,4 @@
 import {
-  deleteDoc,
   doc,
   getDoc,
   onSnapshot,
@@ -155,32 +154,6 @@ export async function saveScreenConfig(screenId, config) {
     updatedAt: serverTimestamp(),
   }, { merge: true });
   return clean;
-}
-
-export async function savePublicGuardiesDay(courseId, date, projection) {
-  if (E2E_AUTH_BYPASS) {
-    const key = `${E2E_GUARDIES_PREFIX}${courseId}`;
-    const data = JSON.parse(localStorage.getItem(key) || '{}');
-    data.publicDays ||= {};
-    if (projection && ['published', 'closed'].includes(projection.status)) data.publicDays[date] = projection;
-    else delete data.publicDays[date];
-    localStorage.setItem(key, JSON.stringify(data));
-    return;
-  }
-  const reference = publicDayRef(courseId, date);
-  if (!projection || !['published', 'closed'].includes(projection.status)) {
-    await deleteDoc(reference).catch((error) => {
-      if (error?.code !== 'not-found') throw error;
-    });
-    return;
-  }
-  await setDoc(reference, {
-    ...projection,
-    schemaVersion: 1,
-    courseId,
-    date,
-    updatedAt: serverTimestamp(),
-  });
 }
 
 export function waitForPantallesUser() {

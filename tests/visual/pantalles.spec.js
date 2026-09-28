@@ -332,3 +332,57 @@ test('les franges horàries van sempre una sota l\'altra i a tota l\'amplada', a
     if (index) expect(box.top).toBeGreaterThan(boxes[index - 1].bottom - 1);
   });
 });
+
+test('mantenir premut el rellotge 3 segons recarrega el quiosc', async ({ page }) => {
+  await seedScreen(page);
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+  const clock = page.locator('.live-clock');
+
+  // Deixar-lo anar abans d'hora no fa res.
+  await clock.dispatchEvent('pointerdown');
+  await expect(clock).toHaveClass(/is-holding/);
+  await expect(clock).toContainText('Mantén premut');
+  await clock.dispatchEvent('pointerup');
+  await expect(clock).not.toHaveClass(/is-holding/);
+
+  const reloaded = page.waitForEvent('load', { timeout: 8_000 });
+  await clock.dispatchEvent('pointerdown');
+  await reloaded;
+});
+
+test('es recarrega sol quan es publica una versió nova, una sola vegada', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-09-11T10:00:00+02:00') });
+  let checks = 0;
+  await page.route((url) => url.pathname === '/', async (route) => {
+    if (route.request().resourceType() !== 'fetch') return route.continue();
+    checks += 1;
+    return route.fulfill({ contentType: 'text/html', body: '<script type="module" crossorigin src="/assets/index-nova.js"></script>' });
+  });
+  await seedScreen(page);
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+  await expect(page.getByText('Maria Sureda')).toBeVisible();
+
+  const reloaded = page.waitForEvent('load');
+  await page.clock.runFor(5 * 60_000 + 1_000);
+  await reloaded;
+  await expect(page.getByText('Maria Sureda')).toBeVisible();
+
+  // El servidor encara diu que hi ha la mateixa versió nova: no torna a recarregar.
+  let reloadedAgain = false;
+  page.once('load', () => { reloadedAgain = true; });
+  await page.clock.runFor(5 * 60_000 + 1_000);
+  await expect.poll(() => checks).toBeGreaterThan(1);
+  await page.waitForTimeout(500);
+  expect(reloadedAgain).toBe(false);
+});
+
+test('es recarrega cada dia a les 6.30', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-09-11T06:29:30+02:00') });
+  await seedScreen(page);
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+  await expect(page.getByText('Maria Sureda')).toBeVisible();
+
+  const reloaded = page.waitForEvent('load');
+  await page.clock.runFor(61_000);
+  await reloaded;
+});

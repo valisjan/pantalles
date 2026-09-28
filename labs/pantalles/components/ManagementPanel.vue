@@ -164,6 +164,7 @@ async function copyKioskUrl() {
         </label>
         <button type="button" class="secondary-button" @click="copyKioskUrl">Copia la URL del quiosc</button>
       </div>
+      <p class="field-help">El quiosc s’actualitza sol quan hi ha una versió nova i cada dia a les 6.30. Per recarregar-lo a mà, mantén premut el rellotge 3 segons.</p>
 
       <div class="segmented" role="tablist" aria-label="Configuració de la pantalla">
         <button type="button" role="tab" :aria-selected="tab === 'views'" :class="{ active: tab === 'views' }" @click="tab = 'views'">Vistes</button>

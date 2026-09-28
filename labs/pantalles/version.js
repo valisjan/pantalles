@@ -1,6 +1,15 @@
-export const PANTALLES_VERSION = '1.3.0';
+export const PANTALLES_VERSION = '1.4.0';
 
 export const PANTALLES_RELEASES = [
+  {
+    version: '1.4.0',
+    date: '28 de setembre de 2026',
+    changes: [
+      'El quiosc s’actualitza sol quan es publica una versió nova, sempre en un moment en què ningú no el toca.',
+      'Recàrrega diària a les 6.30, abans de les classes, perquè els ordinadors antics funcionin àgils tot el dia.',
+      'Mantenir premut el rellotge 3 segons recarrega la pantalla sense teclat.',
+    ],
+  },
   {
     version: '1.3.0',
     date: '28 de setembre de 2026',

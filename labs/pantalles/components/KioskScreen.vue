@@ -13,6 +13,7 @@ import { daySummary, hourSummary, isPatioHour, shortHourLabel } from '../../../s
 import { playlistFor } from '../../../src/domain/schedule.js';
 import { DEFAULT_SCREEN_CONFIG } from '../../../src/services/pantallesStorage.js';
 import { useClock } from '../composables/useClock.js';
+import { useKioskUpdates } from '../composables/useKioskUpdates.js';
 import { usePageState } from '../composables/usePageState.js';
 import { usePublicDay } from '../composables/usePublicDay.js';
 import HourCard from './HourCard.vue';
@@ -54,6 +55,9 @@ function registerInteraction() {
     manualViewId.value = '';
   }, IDLE_RESET_MS);
 }
+
+// El quiosc real es posa al dia sol; la vista prèvia de la gestió, no.
+if (!props.previewViewId) useKioskUpdates(computed(() => !interacting.value));
 
 const today = computed(() => localDateString(minute.value));
 const selectedDate = computed(() => localDate.value || props.queryDate || today.value);
@@ -192,7 +196,7 @@ onBeforeUnmount(() => {
       </div>
 
       <template v-else>
-        <KioskHeader :title="activeView?.name || 'Pantalla informativa'" :screen-name="config.name" :date-label="formatLongDate(selectedDate)" />
+        <KioskHeader :title="activeView?.name || 'Pantalla informativa'" :screen-name="config.name" :date-label="formatLongDate(selectedDate)" :reloadable="!preview" />
 
         <div v-if="viewType === 'guardies' && browsingOtherDay" class="kiosk-banner other-day" role="status">
           <span>Estàs veient el full del <strong>{{ formatLongDate(selectedDate).toLowerCase() }}</strong></span>

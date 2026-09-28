@@ -241,9 +241,45 @@
   }
 
   .live-clock {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
+    padding-bottom: 6px;
+    cursor: default;
+  }
+
+  /* Mantenir premut el rellotge recarrega el quiosc: la barra s'omple en 3 s. */
+  .hold-progress {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    overflow: hidden;
+    border-radius: 999px;
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  .hold-progress span {
+    display: block;
+    height: 100%;
+    background: var(--primary);
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+
+  .live-clock.is-holding .hold-progress { opacity: 1; }
+
+  .live-clock.is-holding .hold-progress span {
+    transform: scaleX(1);
+    transition: transform 3s linear;
+  }
+
+  .live-clock.is-holding .live-clock-session {
+    background: var(--amber-dot);
+    color: #15171c;
   }
 
   .live-clock-time {

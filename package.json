@@ -1,12 +1,13 @@
 {
   "name": "pantalles",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "test:domain": "node --test tests/domain/*.test.js",
     "test:visual": "playwright test"
   },
   "dependencies": {

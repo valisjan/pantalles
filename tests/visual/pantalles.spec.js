@@ -29,7 +29,7 @@ const publicDay = {
   groupsOut: [{ id: '2ESOA', label: '2ESO-A', partial: false }],
 };
 
-async function seedScreen(page) {
+async function seedScreen(page, day = publicDay) {
   await page.addInitScript(({ day }) => {
     localStorage.setItem('quota-e2e-pantalla:sala-professorat', JSON.stringify({
       schemaVersion: 1,
@@ -46,7 +46,7 @@ async function seedScreen(page) {
     localStorage.setItem('quota-e2e-guardies:e2e-2026', JSON.stringify({
       publicDays: { '2026-09-11': day },
     }));
-  }, { day: publicDay });
+  }, { day });
 }
 
 test('pantalla de sala mostra la jornada publicada en vertical', async ({ page }) => {
@@ -97,7 +97,7 @@ test('administració de pantalla desa els canvis sense botó', async ({ page }) 
   await seedScreen(page);
   await page.goto('/?gestio=1&pantalla=sala-professorat');
 
-  await page.getByRole('button', { name: 'Aparença' }).click();
+  await page.getByRole('tab', { name: 'Aparença' }).click();
   const name = page.getByLabel('Nom de la pantalla');
   await expect(name).toHaveValue('Sala de professorat');
   await name.fill('Sala gran');
@@ -156,4 +156,63 @@ test('administració converteix un enllaç compartit de Drive en una vista', asy
     const value = JSON.parse(localStorage.getItem('quota-e2e-pantalla:sala-professorat'));
     return value.views?.find((view) => view.type === 'drive')?.driveUrl || '';
   })).toBe('https://drive.google.com/file/d/1AbCdEfGhIjKlMn/preview');
+});
+
+test('cada cobertura mostra el mateix estat que el full de guàrdies', async ({ page }) => {
+  const row = (id, fields) => ({
+    id, absent: `Docent ${id}`, group: '1ESO-F', subject: 'MAT-F-1E', room: 'Aula 6',
+    assigned: '', coTeacher: false, cancelled: false, comment: '', ...fields,
+  });
+  await seedScreen(page, {
+    ...publicDay,
+    hours: [{
+      key: '11:15', kind: 'guardies', label: '4a hora · 11:15',
+      rows: [
+        row('A', {}),
+        row('B', { assigned: 'Pere Blanes' }),
+        row('C', { assigned: 'Joana Mas', coTeacher: true }),
+        row('D', { group: '1ESO-E + 1ESO-F', subject: 'MAT-EF-1E', returnsToGroup: true }),
+        row('E', { group: 'Guàrdia', subject: 'Guàrdia', room: '' }),
+        row('F', { assigned: 'Llucia Pons', cancelled: true }),
+      ],
+    }],
+  });
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+
+  const rows = page.locator('.guard-row');
+  await expect(rows.filter({ hasText: 'Docent A' })).toHaveClass(/status-open/);
+  await expect(rows.filter({ hasText: 'Docent A' })).toContainText('Pendent');
+  await expect(rows.filter({ hasText: 'Docent B' })).toHaveClass(/status-covered/);
+  await expect(rows.filter({ hasText: 'Docent C' })).toContainText('Queda amb el grup');
+  await expect(rows.filter({ hasText: 'Docent D' })).toContainText('Torna al seu grup');
+  await expect(rows.filter({ hasText: 'Docent D' })).toContainText('Sense substitució');
+  await expect(rows.filter({ hasText: 'Docent E' })).toHaveClass(/status-info/);
+  await expect(rows.filter({ hasText: 'Docent F' })).toContainText('No realitzada');
+
+  // Només la A i la B demanen algú que faci la guàrdia; la A encara no té ningú.
+  await expect(page.getByRole('button', { name: '4a: 2 guàrdies, 1 sense cobrir' })).toHaveClass(/pending/);
+  await expect(page.locator('.kiosk-kpi.is-open')).toContainText('1guàrdia sense cobrir');
+});
+
+test('el quiosc passa sol al dia següent a mitjanit', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-09-10T23:59:30+02:00') });
+  await seedScreen(page);
+  await page.goto('/?pantalla=sala-professorat');
+
+  await expect(page.getByText("No s'ha publicat el full de guàrdies d'aquest dia")).toBeVisible();
+  await page.clock.runFor(60_000);
+  await expect(page.getByText('Maria Sureda')).toBeVisible();
+});
+
+test('la gestió mostra la barra comuna i la vista prèvia de la vista que s\'edita', async ({ page }) => {
+  await seedScreen(page);
+  await page.goto('/?gestio=1&pantalla=sala-professorat&data=2026-09-11');
+
+  await expect(page.locator('.app-nav .brand-title')).toHaveText('Pantalles');
+  await page.getByRole('button', { name: 'Apps' }).click();
+  await expect(page.locator('.apps-popover')).toContainText('Guàrdies');
+  await expect(page.locator('.management-preview')).toContainText('Maria Sureda');
+  await page.getByRole('tab', { name: 'Avís' }).click();
+  await page.getByLabel('Avís a la pantalla').fill('Simulacre a les 12.00 h');
+  await expect(page.locator('.management-preview .screen-message')).toHaveText('Simulacre a les 12.00 h');
 });

@@ -3,11 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3, user-scalable=yes" />
-    <meta name="theme-color" content="#eef1f4" />
+    <meta name="theme-color" content="#f5f4f0" />
     <meta name="description" content="Pantalles informatives de l'IES Josep Sureda i Blanes" />
     <title>Pantalles · IES Josep Sureda i Blanes</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <script>
+      // El tema fosc de la gestió és el mateix de la resta d'aplicacions; el quiosc
+      // en té un de propi a la configuració de la pantalla.
+      try {
+        if (new URLSearchParams(location.search).get('gestio') === '1') {
+          document.documentElement.classList.toggle(
+            'dark',
+            localStorage.getItem('quota_theme') === 'dark' || localStorage.getItem('darkMode') === 'true'
+          );
+        }
+      } catch (_) {}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..700&amp;family=Figtree:wght@400..900&amp;display=swap" />
     <script type="module" src="/labs/pantalles/entry.js"></script>
   </head>
   <body>

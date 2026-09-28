@@ -9,6 +9,7 @@ export const PANTALLES_RELEASES = [
       'L’hora en curs mostra quants minuts en queden, amb una barra de progrés i un punt que batega.',
       'El professorat que cobreix una guàrdia apareix com a «Professorat de guàrdia», amb una G si és de guàrdia o «Alliberat/ada» si ho és per una sortida.',
       'Animacions suaus en canviar de dia o de vista, en aparèixer una absència nova i en actualitzar-se el resum.',
+      'Les franges horàries es mostren sempre una sota l’altra i a tota l’amplada, en qualsevol pantalla.',
     ],
   },
   {

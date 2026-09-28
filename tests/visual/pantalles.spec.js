@@ -317,3 +317,18 @@ test('la gestió programa un anunci per ara amb un sol toc', async ({ page }) =>
     schedule: { mode: 'scheduled', from: '2026-09-11', start: '10:05', end: '11:05', exclusive: true },
   });
 });
+
+test('les franges horàries van sempre una sota l\'altra i a tota l\'amplada', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await seedScreen(page);
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+
+  const cards = page.locator('.day-content > .hour-card');
+  await expect(cards).toHaveCount(4);
+  const boxes = await cards.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON()));
+  const content = await page.locator('.day-content').evaluate((element) => element.getBoundingClientRect().width);
+  boxes.forEach((box, index) => {
+    expect(Math.abs(box.width - content)).toBeLessThan(2);
+    if (index) expect(box.top).toBeGreaterThan(boxes[index - 1].bottom - 1);
+  });
+});

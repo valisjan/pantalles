@@ -573,7 +573,8 @@
     text-align: center;
   }
 
-  /* Hores del dia. En pantalles apaïsades amples, dues columnes en ordre. */
+  /* Hores del dia: sempre una sota l'altra i a tota l'amplada, perquè les
+     franges no es barregin sigui quina sigui la mida de la pantalla. */
   .day-content {
     display: grid;
     gap: 12px;
@@ -1014,11 +1015,6 @@
     .view-enter-active,
     .view-leave-active,
     .hour-progress span { transition: none; }
-  }
-
-  @container kiosk (min-width: 1150px) {
-    .day-content { display: block; column-count: 2; column-gap: 14px; }
-    .day-content > .hour-card { margin-bottom: 14px; break-inside: avoid; }
   }
 
   @media (orientation: portrait) {

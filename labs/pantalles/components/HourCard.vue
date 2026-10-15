@@ -49,7 +49,7 @@ const count = computed(() => {
     class="hour-card"
     :data-hour-key="hour.key"
     :style="{ '--i': index }"
-    :class="{ 'patio-card': patio, 'current-session': current, past, empty: !patio && !rows.length }"
+    :class="{ 'patio-card': patio, 'current-session': current, past, empty: !patio && !rows.length && !hour.observation }"
   >
     <header class="hour-card-head">
       <div class="hour-title">
@@ -74,7 +74,10 @@ const count = computed(() => {
         <span>{{ zone.teacher }}</span>
         <em v-if="zone.absent">Absent</em>
       </article>
-      <p v-if="hour.patio?.observation" class="patio-observation">{{ hour.patio.observation }}</p>
+      <p v-if="hour.patio?.observation" class="patio-observation">
+        <strong class="observation-label">Observacions del pati</strong>
+        <span class="observation-text">{{ hour.patio.observation }}</span>
+      </p>
     </div>
 
     <TransitionGroup v-else-if="rows.length" name="row" tag="div" class="guard-list">
@@ -94,8 +97,15 @@ const count = computed(() => {
             <abbr v-if="row.mark === 'guard'" class="source-mark is-guard" title="Professorat de guàrdia">G</abbr>
           </strong>
         </div>
-        <p v-if="row.comment" class="row-comment">{{ row.comment }}</p>
+        <p v-if="row.comment" class="row-comment">
+          <strong class="observation-label">Observacions</strong>
+          <span class="observation-text">{{ row.comment }}</span>
+        </p>
       </article>
     </TransitionGroup>
+    <p v-if="hour.observation" class="hour-observation">
+      <strong class="observation-label">Observacions de l’hora</strong>
+      <span class="observation-text">{{ hour.observation }}</span>
+    </p>
   </section>
 </template>

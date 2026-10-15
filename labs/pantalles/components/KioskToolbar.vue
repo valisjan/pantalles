@@ -1,4 +1,6 @@
 <script setup>
+import ToolbarClock from './ToolbarClock.vue';
+
 defineProps({
   // Controls del full de guàrdies; a les altres vistes només hi ha el selector.
   dayControls: { type: Boolean, default: true },
@@ -53,6 +55,7 @@ function counterLabel(session) {
         </button>
       </div>
       <div class="kiosk-actions">
+        <ToolbarClock />
         <div class="kiosk-action-group" role="group" aria-label="Dia">
           <button type="button" aria-label="Dia anterior" @click="emit('shift-day', -1)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>

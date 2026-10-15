@@ -49,6 +49,82 @@ async function seedScreen(page, day = publicDay) {
   }, { day });
 }
 
+for (const theme of ['light', 'dark']) {
+test(`es veuen els comentaris i les observacions de totes les hores, i s’actualitzen en directe (${theme})`, async ({ page }, testInfo) => {
+  const comment = 'Primera instrucció\nSegona instrucció <material>';
+  await seedScreen(page, {
+    ...publicDay,
+    hours: [
+      { ...publicDay.hours[0], rows: [{ ...publicDay.hours[0].rows[0], comment }], observation: 'Avís de primera hora' },
+      publicDay.hours[2],
+      { key: '14:00', label: '7a hora · 14:00', rows: [], observation: 'Reunió a la biblioteca\nDur el material' },
+    ],
+  });
+  await page.addInitScript((theme) => {
+    const key = 'quota-e2e-pantalla:sala-professorat';
+    const config = JSON.parse(localStorage.getItem(key));
+    localStorage.setItem(key, JSON.stringify({ ...config, theme }));
+  }, theme);
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+
+  const note = page.locator('.row-comment .observation-text');
+  await expect(note).toHaveText(comment);
+  await expect(note).toHaveCSS('white-space', 'pre-wrap');
+  await expect(note.locator('material')).toHaveCount(0);
+  await note.scrollIntoViewIfNeeded();
+  await expect(note).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath(`comments-${theme}.png`) });
+  await expect(page.locator('.patio-observation')).toContainText('Canvi puntual als banys');
+  await expect(page.locator('[data-hour-key="8:00"] .hour-observation')).toContainText('Avís de primera hora');
+  const seventh = page.locator('[data-hour-key="14:00"]');
+  await seventh.scrollIntoViewIfNeeded();
+  await expect(seventh.locator('.hour-observation')).toBeVisible();
+  await expect(seventh).not.toHaveClass(/empty/);
+  await expect(seventh.locator('.observation-text')).toHaveText('Reunió a la biblioteca\nDur el material');
+
+  // El doble local del listener de Firestore permet provar actualitzacions sense escriure a producció.
+  for (const comment of ['Nova instrucció de cap d’estudis', '']) {
+    await page.evaluate((comment) => {
+      const key = 'quota-e2e-guardies:e2e-2026';
+      const data = JSON.parse(localStorage.getItem(key));
+      data.publicDays['2026-09-11'].hours[0].rows[0].comment = comment;
+      localStorage.setItem(key, JSON.stringify(data));
+      window.dispatchEvent(new StorageEvent('storage', { key }));
+    }, comment);
+    if (comment) await expect(note).toHaveText(comment);
+    else await expect(page.locator('.row-comment')).toHaveCount(0);
+  }
+});
+}
+
+for (const portrait of [false, true]) {
+  test(`el rellotge dels controls continua visible en desplaçar-se${portrait ? ' en vertical' : ''}`, async ({ page }, testInfo) => {
+    if (portrait) await page.setViewportSize({ width: 1080, height: 1920 });
+    await page.clock.setFixedTime(new Date('2026-09-11T18:30:00+02:00'));
+    await seedScreen(page, {
+      ...publicDay,
+      hours: Array.from({ length: 8 }, (_, index) => ({
+        ...publicDay.hours[0], key: `hora-${index}`, label: `${index + 1}a hora`,
+        rows: Array.from({ length: 4 }, (_, row) => ({ ...publicDay.hours[0].rows[0], id: `${index}-${row}` })),
+      })),
+    });
+    await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+    const clock = page.locator('.toolbar-clock time');
+    await expect(clock).toHaveText('18:30:00');
+    await page.getByRole('button', { name: 'Augmenta el text' }).click();
+    for (const fraction of [1, 0.5, 0.1]) {
+      await page.evaluate((fraction) => window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * fraction), fraction);
+      await expect(clock).toBeInViewport({ ratio: 1 });
+      await expect(page.getByRole('button', { name: 'Augmenta el text' })).toBeInViewport({ ratio: 1 });
+      await expect(page.getByRole('button', { name: 'Dia anterior' })).toBeInViewport({ ratio: 1 });
+    }
+    await page.clock.setFixedTime(new Date('2026-09-11T18:30:05+02:00'));
+    await expect(clock).toHaveText('18:30:05');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath('sticky-clock.png') });
+  });
+}
+
 test('pantalla de sala mostra la jornada publicada en vertical', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 1400 });
   await seedScreen(page);

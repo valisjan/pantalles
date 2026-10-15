@@ -381,6 +381,32 @@
     margin-left: auto;
   }
 
+  .toolbar-clock {
+    display: grid;
+    flex-shrink: 0;
+    gap: 2px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    padding: 7px 14px;
+    box-shadow: var(--shadow);
+  }
+
+  .toolbar-clock > span {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-weight: 700;
+  }
+
+  .toolbar-clock time {
+    color: var(--text);
+    font-size: var(--text-xl);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
   .session-counters {
     border: 1px solid var(--border);
     border-radius: 16px;
@@ -848,15 +874,30 @@
     text-decoration: line-through;
   }
 
-  .row-comment {
+  .row-comment,
+  .hour-observation {
     grid-column: 1 / -1;
     margin: 0;
     border-top: 1px dashed var(--border);
-    background: var(--surface-subtle);
+    background: var(--primary-soft);
     padding: 10px 16px 10px 20px;
-    color: var(--text-soft);
+    color: var(--text);
     font-size: var(--text-md);
     font-weight: 600;
+  }
+
+  .observation-label {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--primary-strong);
+    font-size: var(--text-xs);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .observation-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   /* Pati i sortides */
@@ -1083,7 +1124,6 @@
     .live-clock-time { font-size: var(--text-3xl); }
     .kiosk-kpi { min-width: 130px; }
     .kiosk-kpi strong { font-size: var(--text-2xl); }
-    .kiosk-toolbar { position: static; }
     .session-counters { width: 100%; flex-wrap: wrap; justify-content: center; }
     .kiosk-actions { width: 100%; justify-content: center; margin-left: 0; }
     .guard-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }

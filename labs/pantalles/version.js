@@ -1,6 +1,19 @@
-export const PANTALLES_VERSION = '1.6.0';
+export const PANTALLES_VERSION = '1.7.0';
 
 export const PANTALLES_RELEASES = [
+  {
+    version: '1.7.0',
+    date: '22 d’octubre de 2026',
+    changes: [
+      'La vista prèvia de la gestió mostra la pantalla amb la seva proporció real, vertical o horitzontal, tal com es veurà al televisor.',
+      'Quan la barra de guàrdies per hora queda fixa a dalt, té un fons de banda a banda: el full ja no s’hi veu per sota.',
+      'En els televisors apaïsats, els noms, els grups i les franges horàries són més grans per llegir-los de lluny.',
+      'Al pati destaca el nom de qui hi ha a cada zona, i les zones ocupen tota l’amplada.',
+      'Menys repeticions: el títol de cada hora és la seva franja horària, el nom de qui fa la guàrdia ja no porta la G i la barra mostra només el nombre de guàrdies.',
+      'Quan no queda cap guàrdia sense cobrir, el resum ho diu: «totes cobertes».',
+      'Un dia sense full publicat, la pantalla fa de rellotge, amb l’hora i la data ben grans.',
+    ],
+  },
   {
     version: '1.6.0',
     date: '22 d’octubre de 2026',

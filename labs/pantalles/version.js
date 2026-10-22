@@ -8,6 +8,8 @@ export const PANTALLES_RELEASES = [
       'La barra de guàrdies per hora surt sempre a dalt, també a les pantalles verticals, igual que a la vista prèvia de la gestió: ja no baixa a mitja pantalla quan hi ha poques guàrdies.',
       'Cada hora indica en ambre quantes guàrdies queden sense cobrir, com al full de guàrdies.',
       'Les hores sense absències es mostren com una línia discreta perquè destaquin les que tenen feina.',
+      'Les observacions de cada absència, de l’hora i del pati surten amb la seva etiqueta, sempre de la mateixa mida.',
+      'En baixar pel full, la barra porta un rellotge; a dalt no es repeteix, perquè ja hi ha el de la capçalera.',
     ],
   },
   {

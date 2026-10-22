@@ -741,6 +741,51 @@
     align-items: center;
     gap: 10px;
     color: var(--muted);
+    font-size: var(--text-base);
+    font-weight: 700;
+  }
+
+  /* Com al full de guàrdies: les que encara no té ningú, en ambre. */
+  .session-pending {
+    border: 1px solid var(--amber-border);
+    border-radius: 999px;
+    background: var(--amber-soft);
+    padding: 4px 12px;
+    color: var(--amber);
+    font-size: var(--text-sm);
+    font-style: normal;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  /* Hores sense absències: una línia discreta perquè destaquin les que tenen feina. */
+  .hour-card.empty:not(.current-session) {
+    border-style: dashed;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .hour-card.empty:not(.current-session) .hour-card-head {
+    min-height: 0;
+    background: transparent;
+    padding-block: 6px;
+  }
+
+  .hour-card.empty:not(.current-session) .hour-badge {
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px dashed var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: var(--text-base);
+  }
+
+  .hour-card.empty:not(.current-session) .hour-card-head h2 {
+    color: var(--muted);
+    font-size: var(--text-lg);
+  }
+
+  .hour-card.empty:not(.current-session) .session-meta {
     font-size: var(--text-sm);
     font-weight: 600;
   }
@@ -1104,17 +1149,6 @@
 
   @media (orientation: portrait) {
     .kiosk-brand h1 { font-size: var(--text-2xl); }
-  }
-
-  /* Pantalla vertical: els controls tàctils van a baix, a l'abast de la mà. */
-  @media (orientation: portrait) and (min-width: 721px) {
-    .kiosk-toolbar {
-      order: 20;
-      top: auto;
-      bottom: 10px;
-    }
-
-    .kiosk-footer { order: 30; }
   }
 
   @media (max-width: 720px) {

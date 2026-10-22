@@ -1,6 +1,15 @@
-export const PANTALLES_VERSION = '1.5.0';
+export const PANTALLES_VERSION = '1.6.0';
 
 export const PANTALLES_RELEASES = [
+  {
+    version: '1.6.0',
+    date: '22 d’octubre de 2026',
+    changes: [
+      'La barra de guàrdies per hora surt sempre a dalt, també a les pantalles verticals, igual que a la vista prèvia de la gestió: ja no baixa a mitja pantalla quan hi ha poques guàrdies.',
+      'Cada hora indica en ambre quantes guàrdies queden sense cobrir, com al full de guàrdies.',
+      'Les hores sense absències es mostren com una línia discreta perquè destaquin les que tenen feina.',
+    ],
+  },
   {
     version: '1.5.0',
     date: '28 de setembre de 2026',

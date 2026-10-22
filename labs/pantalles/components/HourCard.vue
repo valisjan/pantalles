@@ -42,6 +42,7 @@ const count = computed(() => {
   const total = rows.value.length;
   return total ? `${total} ${total === 1 ? 'absència' : 'absències'}` : 'Sense absències';
 });
+const open = computed(() => rows.value.filter((row) => row.status === 'open').length);
 </script>
 
 <template>
@@ -61,6 +62,7 @@ const count = computed(() => {
       </div>
       <div class="session-meta">
         <strong v-if="current" class="now-badge">Ara<template v-if="progress"> · queden {{ progress.remaining }} min</template></strong>
+        <em v-if="open" class="session-pending">{{ open }} sense cobrir</em>
         <span v-if="!patio">{{ count }}</span>
       </div>
       <div v-if="progress" class="hour-progress" aria-hidden="true">

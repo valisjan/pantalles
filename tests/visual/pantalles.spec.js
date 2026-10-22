@@ -364,15 +364,43 @@ test('avisa quan es mira un altre dia i hi torna amb un toc', async ({ page }) =
   await expect(page.getByText('Maria Sureda')).toBeVisible();
 });
 
-test('en una pantalla vertical els controls tàctils queden a baix', async ({ page }) => {
+test('en una pantalla vertical les hores surten a dalt, com a la vista prèvia de la gestió', async ({ page }) => {
   await page.setViewportSize({ width: 1080, height: 1920 });
   await seedScreen(page);
   await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
 
+  // Amb poques guàrdies (no cal desplaçar-se), la barra no baixa a mitja pantalla.
   const toolbar = await page.locator('.kiosk-toolbar').boundingBox();
-  const header = await page.locator('.kiosk-header').boundingBox();
-  expect(toolbar.y).toBeGreaterThan(header.y + header.height + 200);
-  expect(toolbar.y + toolbar.height).toBeLessThanOrEqual(1920);
+  const summary = await page.locator('.kiosk-summary').boundingBox();
+  const firstHour = await page.locator('.day-content > .hour-card').first().boundingBox();
+  expect(toolbar.y).toBeGreaterThan(summary.y + summary.height - 1);
+  expect(toolbar.y + toolbar.height).toBeLessThan(firstHour.y + 1);
+
+  // I es queda a dalt mentre es baixa pel full.
+  await page.locator('.kiosk').evaluate((element) => {
+    element.querySelector('.day-content').style.minHeight = '4000px';
+    window.scrollTo(0, 1500);
+  });
+  await expect.poll(async () => (await page.locator('.kiosk-toolbar').boundingBox()).y).toBeLessThan(40);
+});
+
+test('cada hora diu quantes guàrdies queden sense cobrir i les hores buides són discretes', async ({ page }) => {
+  await seedScreen(page, {
+    ...publicDay,
+    hours: [
+      { ...publicDay.hours[0], rows: [publicDay.hours[0].rows[0], { ...publicDay.hours[0].rows[0], id: '1|1|8:00|b', assigned: '' }] },
+      publicDay.hours[1],
+    ],
+  });
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+
+  const busy = page.locator('.hour-card[data-hour-key="8:00"]');
+  await expect(busy.locator('.session-pending')).toHaveText('1 sense cobrir');
+  await expect(busy.locator('.session-meta')).toContainText('2 absències');
+  const empty = page.locator('.hour-card[data-hour-key="8:55"]');
+  await expect(empty).toHaveClass(/empty/);
+  await expect(empty.locator('.session-pending')).toHaveCount(0);
+  expect(await empty.evaluate((element) => getComputedStyle(element).borderStyle)).toBe('dashed');
 });
 
 test('la gestió programa un anunci per ara amb un sol toc', async ({ page }) => {

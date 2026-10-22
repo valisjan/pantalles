@@ -53,7 +53,7 @@ function counterLabel(session) {
         >
           <strong class="counter-hour">{{ session.label }}</strong>
           <span class="counter-time">{{ session.key }}</span>
-          <span v-if="session.guards" class="counter-count">{{ session.guards }} G</span>
+          <span v-if="session.guards" class="counter-count" aria-hidden="true">{{ session.guards }}</span>
         </button>
       </div>
       <div class="kiosk-actions">

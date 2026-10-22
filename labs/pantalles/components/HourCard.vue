@@ -6,7 +6,6 @@ import {
   rowCoverLabel,
   rowCoverText,
   rowRole,
-  rowSourceMark,
   rowStatus,
   shortHourLabel,
 } from '../../../src/domain/publicDay.js';
@@ -33,7 +32,6 @@ const rows = computed(() => (props.hour.rows || []).map((row) => {
     role: rowRole(row),
     statusLabel: rowCoverLabel(row),
     cover: rowCoverText(row),
-    mark: rowSourceMark(row),
     detail: [row.subject !== row.group ? row.subject : '', row.room].filter(Boolean).join(' · '),
   };
 }));
@@ -56,8 +54,10 @@ const open = computed(() => rows.value.filter((row) => row.status === 'open').le
       <div class="hour-title">
         <span class="hour-badge" aria-hidden="true">{{ patio ? 'P' : badge }}</span>
         <div>
-          <h2>{{ title }}</h2>
-          <span class="hour-range">{{ range }}</span>
+          <h2 v-if="patio">{{ title }}</h2>
+          <!-- La insígnia ja diu l'hora ("1a"): el títol és la franja, i el nom queda per als lectors de pantalla. -->
+          <h2 v-else><span v-if="range" class="visually-hidden">{{ title }}, </span>{{ range || title }}</h2>
+          <span v-if="patio" class="hour-range">{{ range }}</span>
         </div>
       </div>
       <div class="session-meta">
@@ -70,17 +70,20 @@ const open = computed(() => rows.value.filter((row) => row.status === 'open').le
       </div>
     </header>
 
-    <div v-if="patio" class="patio-grid">
-      <article v-for="zone in zones" :key="`${zone.name}-${zone.teacher}`" class="patio-zone" :class="{ absent: zone.absent }">
-        <strong>{{ zone.name }}</strong>
-        <span>{{ zone.teacher }}</span>
-        <em v-if="zone.absent">Absent</em>
-      </article>
+    <template v-if="patio">
+      <!-- L'observació va fora de la graella: si l'ocupés sencera, les zones no s'estirarien. -->
+      <div class="patio-grid">
+        <article v-for="zone in zones" :key="`${zone.name}-${zone.teacher}`" class="patio-zone" :class="{ absent: zone.absent }">
+          <span class="zone-name">{{ zone.name }}</span>
+          <strong class="zone-teacher">{{ zone.teacher }}</strong>
+          <em v-if="zone.absent">Absent</em>
+        </article>
+      </div>
       <p v-if="hour.patio?.observation" class="patio-observation">
         <strong class="observation-label">Observacions del pati</strong>
         <span class="observation-text">{{ hour.patio.observation }}</span>
       </p>
-    </div>
+    </template>
 
     <TransitionGroup v-else-if="rows.length" name="row" tag="div" class="guard-list">
       <article v-for="row in rows" :key="row.id" class="guard-row" :class="[`status-${row.status}`, row.role && `role-${row.role}`]">
@@ -94,10 +97,7 @@ const open = computed(() => rows.value.filter((row) => row.status === 'open').le
         </div>
         <div class="assigned-person">
           <span class="cell-label status-label">{{ row.statusLabel }}</span>
-          <strong>
-            {{ row.cover }}
-            <abbr v-if="row.mark === 'guard'" class="source-mark is-guard" title="Professorat de guàrdia">G</abbr>
-          </strong>
+          <strong>{{ row.cover }}</strong>
         </div>
         <p v-if="row.comment" class="row-comment">
           <strong class="observation-label">Observacions</strong>

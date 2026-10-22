@@ -54,11 +54,6 @@ export function rowCoverLabel(row) {
   return ROW_STATUS_LABELS[status];
 }
 
-// La G darrere el nom: qui cobreix és professorat de guàrdia.
-export function rowSourceMark(row) {
-  return rowStatus(row) === 'covered' && rowRole(row) === 'guard' ? 'guard' : '';
-}
-
 // Guàrdies que algú ha de fer (o fer-se càrrec) en una hora.
 export function needsGuard(row) {
   return ['open', 'covered'].includes(rowStatus(row));

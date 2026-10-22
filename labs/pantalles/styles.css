@@ -126,6 +126,16 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 32%, transparent);
   }
 
+  /* Només per als lectors de pantalla */
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
   .spinner {
     width: 2.25rem;
     height: 2.25rem;
@@ -163,12 +173,14 @@
   .kiosk-mode,
   .kiosk-mode body { overscroll-behavior: none; }
 
+  /* Una columna que omple la pantalla: el peu queda sempre a baix. */
   .kiosk-inner {
-    display: grid;
+    --kiosk-pad: clamp(12px, 1.6vw, 28px);
+    display: flex;
     min-height: calc(100vh / var(--display-scale));
-    align-content: start;
+    flex-direction: column;
     gap: 14px;
-    padding: clamp(12px, 1.6vw, 28px);
+    padding: var(--kiosk-pad);
     container: kiosk / inline-size;
     zoom: var(--display-scale);
   }
@@ -352,20 +364,36 @@
   .kiosk-kpi.is-open span,
   .kiosk-kpi.is-covered span { color: inherit; }
 
-  /* Barra tàctil: sessions, dia i mida */
+  .kpi-check {
+    width: 1.75rem;
+    height: 1.75rem;
+    flex: 0 0 auto;
+    align-self: center;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 3;
+  }
+
+  /* Barra tàctil: sessions, dia i mida. Quan queda fixa a dalt, una franja de fons
+     de banda a banda tapa el full que hi passa per sota, també entre les peces. */
   .kiosk-toolbar {
     position: sticky;
     z-index: 5;
-    top: 8px;
+    top: 0;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    pointer-events: none;
+    margin: -8px calc(-1 * var(--kiosk-pad));
+    background: var(--bg);
+    padding: 8px var(--kiosk-pad);
+    transition: box-shadow 200ms ease;
   }
 
-  .kiosk-toolbar > * { pointer-events: auto; }
+  .kiosk-toolbar.is-stuck { box-shadow: 0 1px 0 var(--border), 0 12px 18px -14px rgb(20 24 32 / 0.45); }
 
   .session-counters,
   .kiosk-actions,
@@ -946,7 +974,8 @@
     overflow-wrap: anywhere;
   }
 
-  /* Pati i sortides */
+  /* Pati i sortides. Les zones del pati s'estiren fins a omplir l'amplada; els
+     grups de sortida són etiquetes curtes i es queden compactes. */
   .patio-grid,
   .outings-grid {
     display: grid;
@@ -954,6 +983,8 @@
     gap: 8px;
     padding: 12px;
   }
+
+  .patio-grid { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
 
   .patio-zone,
   .outings-grid article {
@@ -967,14 +998,27 @@
     padding: 10px 12px;
   }
 
-  .patio-zone strong,
   .outings-grid strong { font-size: var(--text-md); }
 
-  .patio-zone span,
   .outings-grid span {
     color: var(--muted);
     font-size: var(--text-md);
     font-weight: 600;
+  }
+
+  /* Al pati es busca qui hi ha: el nom destaca i la zona és l'etiqueta. */
+  .zone-name {
+    color: var(--muted);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .zone-teacher {
+    overflow-wrap: anywhere;
+    font-size: var(--text-lg);
+    font-weight: 700;
   }
 
   .patio-zone.absent {
@@ -992,17 +1036,18 @@
   }
 
   .patio-observation {
-    grid-column: 1 / -1;
-    margin: 0;
+    margin: 0 12px 12px;
     border-top: 1px solid var(--border);
     padding: 10px 2px 0;
     font-weight: 600;
   }
 
-  /* Estats: càrrega, sense full, pantalla desactivada */
+  /* Estats: càrrega, sense full, pantalla desactivada. Ocupen l'espai que queda
+     fins al peu, perquè la pantalla no quedi mig buida. */
   .kiosk-state {
     display: grid;
     min-height: 55vh;
+    flex: 1 1 auto;
     place-content: center;
     justify-items: center;
     gap: 14px;
@@ -1013,6 +1058,23 @@
   .kiosk-state strong {
     color: var(--text-soft);
     font-size: var(--text-xl);
+  }
+
+  .no-day { gap: 10px; }
+
+  .no-day-logo {
+    width: auto;
+    height: 5.5rem;
+    margin-bottom: 10px;
+  }
+
+  .no-day-clock {
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: clamp(4.5rem, 14cqi, 11rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
   }
 
   .no-day-date {
@@ -1053,6 +1115,7 @@
     align-items: center;
     justify-content: flex-end;
     gap: 7px;
+    margin-top: auto;
     color: var(--muted);
     font-size: var(--text-xs);
     font-weight: 600;
@@ -1066,29 +1129,6 @@
   }
 
   .connection-dot.online { background: var(--green-dot); }
-
-  /* Qui cobreix: professorat de guàrdia (G) o alliberat per una sortida */
-  .source-mark {
-    display: inline-flex;
-    align-items: center;
-    margin-left: 6px;
-    border-radius: 999px;
-    padding: 2px 8px;
-    font-size: var(--text-xs);
-    font-weight: 800;
-    text-decoration: none;
-    vertical-align: 2px;
-  }
-
-  .source-mark.is-guard {
-    background: var(--primary);
-    color: var(--on-primary);
-  }
-
-  .source-mark.is-released {
-    background: var(--green-soft);
-    color: var(--green);
-  }
 
   /* Franja amb els colors del logotip del centre */
   .kiosk-header {
@@ -1150,6 +1190,24 @@
 
   @media (orientation: portrait) {
     .kiosk-brand h1 { font-size: var(--text-2xl); }
+  }
+
+  /* Televisor apaïsat (1920 px): les files tenen molt d'ample lliure, així que els
+     noms, els grups i les franges creixen per llegir-los de lluny. */
+  @media (orientation: landscape) and (min-width: 1600px) {
+    .guard-row strong { font-size: 1.375rem; }
+    .session-detail > strong { font-size: 1.5rem; }
+    .session-detail > span { font-size: var(--text-lg); }
+    .cell-label { font-size: var(--text-sm); }
+    .hour-card-head h2 { font-size: 1.5rem; }
+    .hour-card.current-session .hour-card-head h2 { font-size: 1.75rem; }
+    .hour-card.empty:not(.current-session) .hour-card-head h2 { font-size: var(--text-xl); }
+    .hour-range,
+    .session-meta { font-size: var(--text-lg); }
+    .zone-teacher { font-size: 1.375rem; }
+    .row-comment,
+    .hour-observation { font-size: var(--text-lg); }
+    .counter-time { font-size: var(--text-sm); }
   }
 
   @media (max-width: 720px) {
@@ -1314,13 +1372,60 @@
   }
 
   .management-preview {
+    display: grid;
     height: calc(100vh - 61px);
-    overflow: auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
     background: var(--surface-strong);
   }
 
-  .management-preview .kiosk { min-height: 100%; }
-  .management-preview .kiosk-inner { min-height: 100%; }
+  .preview-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 10px 16px;
+  }
+
+  .preview-bar .segmented { min-width: 15rem; }
+
+  .preview-size {
+    color: var(--muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .preview-stage {
+    display: grid;
+    min-height: 0;
+    place-items: center;
+    overflow: hidden;
+    padding: 20px;
+  }
+
+  /* La pantalla real, a escala: el quiosc es dibuixa a la resolució del televisor
+     (orientació, alçada i mides de lletra iguals) i després es redueix. */
+  .preview-device {
+    position: relative;
+    box-sizing: content-box;
+    overflow: hidden;
+    border: 8px solid #1c1f26;
+    border-radius: 14px;
+    background: #1c1f26;
+    box-shadow: 0 18px 40px rgb(20 24 32 / 0.25);
+  }
+
+  .preview-device iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 0;
+    background: var(--bg);
+    transform-origin: 0 0;
+  }
 
   .panel-loading {
     display: grid;
@@ -1836,6 +1941,7 @@
     .management-panel,
     .management-preview { height: auto; }
     .management-panel { border-right: 0; border-bottom: 1px solid var(--border); }
+    .preview-stage { height: min(75vh, 760px); }
   }
 
   @media (max-width: 620px) {

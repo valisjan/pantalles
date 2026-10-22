@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
   currentSlot,
   formatLongDate,
+  formatShortClock,
   isPastHour,
   isSlotHour,
   isWeekend,
@@ -134,6 +135,13 @@ const { day, loading: dayLoading, error: dayError } = usePublicDay(selectedCours
 const hours = computed(() => (Array.isArray(day.value?.hours) ? day.value.hours : []));
 const outings = computed(() => (Array.isArray(day.value?.groupsOut) ? day.value.groupsOut : []));
 const summary = computed(() => daySummary(day.value));
+// Sense cap guàrdia pendent, el resum ho diu amb paraules en lloc d'un zero.
+const openLabel = computed(() => {
+  const { open, guards } = summary.value;
+  if (open) return open === 1 ? 'guàrdia sense cobrir' : 'guàrdies sense cobrir';
+  return guards ? 'totes cobertes' : 'cap guàrdia pendent';
+});
+const shortClock = computed(() => formatShortClock(minute.value));
 const slot = computed(() => (viewingToday.value ? currentSlot(minute.value) : null));
 const isCurrent = (hour) => isSlotHour(slot.value, hour.key);
 const isPast = (hour) => viewingToday.value && isPastHour(minute.value, hour.key);
@@ -225,8 +233,9 @@ onBeforeUnmount(() => {
 
         <div v-if="viewType === 'guardies' && ready && day" class="kiosk-summary" aria-label="Resum de la jornada">
           <div class="kiosk-kpi" :class="summary.open ? 'is-open' : 'is-covered'">
-            <strong :key="summary.open" class="kpi-value">{{ summary.open }}</strong>
-            <span>{{ summary.open === 1 ? 'guàrdia sense cobrir' : 'guàrdies sense cobrir' }}</span>
+            <strong v-if="summary.open" :key="summary.open" class="kpi-value">{{ summary.open }}</strong>
+            <svg v-else class="kpi-value kpi-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+            <span>{{ openLabel }}</span>
           </div>
           <div class="kiosk-kpi">
             <strong :key="summary.guards" class="kpi-value">{{ summary.guards }}</strong>
@@ -251,6 +260,7 @@ onBeforeUnmount(() => {
           :views="switcherViews"
           :active-view-id="activeView?.id || ''"
           :clock="!headerClockVisible"
+          :class="{ 'is-stuck': !headerClockVisible }"
           @jump="jumpToHour"
           @shift-day="shiftDay"
           @today="returnToday"
@@ -271,7 +281,10 @@ onBeforeUnmount(() => {
           <strong>Carregant la jornada…</strong>
         </section>
 
+        <!-- Sense full, la pantalla no queda buida: fa de rellotge. -->
         <section v-else-if="!day" :key="`no-day-${selectedDate}`" class="kiosk-state no-day">
+          <img class="no-day-logo" src="/logo_IESJSB_nav.png" alt="" />
+          <time v-if="viewingToday" class="no-day-clock" :datetime="shortClock">{{ shortClock }}</time>
           <span class="no-day-date">{{ formatLongDate(selectedDate) }}</span>
           <strong>{{ dayError || (isWeekend(selectedDate) ? 'Dia no lectiu' : "No s'ha publicat el full de guàrdies d'aquest dia") }}</strong>
         </section>

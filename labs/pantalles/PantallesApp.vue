@@ -6,11 +6,15 @@ import { DEFAULT_SCREEN_ID, isPantallesAdmin } from '../../src/services/pantalle
 import AppTopBar from './components/AppTopBar.vue';
 import KioskScreen from './components/KioskScreen.vue';
 import ManagementPanel from './components/ManagementPanel.vue';
+import ScreenPreview from './components/ScreenPreview.vue';
+import { usePreviewGuest } from './composables/usePreviewGuest.js';
 import { useScreenConfig } from './composables/useScreenConfig.js';
 
 const params = new URLSearchParams(window.location.search);
 const screenId = params.get('pantalla') || DEFAULT_SCREEN_ID;
 const managementMode = params.get('gestio') === '1';
+// Quiosc dins la vista prèvia de la gestió: rep d'allà la configuració i la vista.
+const previewGuest = !managementMode && params.get('previsualitza') === '1' && window.parent !== window;
 const queryCourse = params.get('curs') || '';
 const queryDate = isIsoDate(params.get('data')) ? params.get('data') : '';
 // El quiosc és tàctil: sense zoom ni selecció accidentals ni "estirar per recarregar".
@@ -19,9 +23,9 @@ if (!managementMode) document.documentElement.classList.add('kiosk-mode');
 const adminReady = ref(!managementMode);
 const adminAllowed = ref(false);
 const signingIn = ref(false);
-const { config, status, scheduleSave, stop } = useScreenConfig(screenId, {
-  canSave: () => managementMode && adminAllowed.value,
-});
+const { config, status, scheduleSave, stop, viewId: guestViewId } = previewGuest
+  ? usePreviewGuest(params.get('vista') || '')
+  : useScreenConfig(screenId, { canSave: () => managementMode && adminAllowed.value });
 
 // Vista que s'edita a la gestió: és també la que mostra la vista prèvia.
 const editingViewId = ref('');
@@ -74,18 +78,24 @@ onBeforeUnmount(stop);
         @save="scheduleSave"
         @sign-in="signIn"
       />
-      <div class="management-preview" aria-label="Vista prèvia de la pantalla">
-        <KioskScreen
-          :config="config"
-          :config-revision="status.revision"
-          :config-loading="status.loading"
-          :preview-view-id="editingViewId || config.views[0]?.id || 'guardies'"
-          :query-course="queryCourse"
-          :query-date="queryDate"
-        />
-      </div>
+      <ScreenPreview
+        :screen-id="screenId"
+        :config="config"
+        :view-id="editingViewId || config.views[0]?.id || 'guardies'"
+        :query-course="queryCourse"
+        :query-date="queryDate"
+      />
     </div>
   </div>
+  <KioskScreen
+    v-else-if="previewGuest"
+    :config="config"
+    :config-revision="status.revision"
+    :config-loading="status.loading"
+    :preview-view-id="guestViewId"
+    :query-course="queryCourse"
+    :query-date="queryDate"
+  />
   <KioskScreen
     v-else
     :config="config"

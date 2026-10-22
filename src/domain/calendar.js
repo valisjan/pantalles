@@ -41,6 +41,11 @@ export function formatClock(date) {
   }).format(date);
 }
 
+// "11:40": rellotge gran, sense segons, per llegir-lo de lluny.
+export function formatShortClock(date) {
+  return new Intl.DateTimeFormat('ca-ES', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+}
+
 // Franges del full de guàrdies: la clau coincideix amb la de cada hora publicada.
 export const BELL_SCHEDULE = Object.freeze([
   { key: '8:00', label: '1a hora', start: 480, end: 535 },

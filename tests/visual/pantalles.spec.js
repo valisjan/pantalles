@@ -265,11 +265,10 @@ test('cada cobertura mostra el mateix estat que el full de guàrdies', async ({ 
   // Guàrdia, codocència i alliberat es distingeixen per l'etiqueta i el color.
   await expect(rows.filter({ hasText: 'Docent B' })).toHaveClass(/role-guard/);
   await expect(rows.filter({ hasText: 'Docent B' }).locator('.status-label')).toHaveText('Guàrdia');
-  await expect(rows.filter({ hasText: 'Docent B' }).locator('.source-mark.is-guard')).toHaveText('G');
   await expect(rows.filter({ hasText: 'Docent C' }).locator('.status-label')).toHaveText('Queden amb');
   await expect(rows.filter({ hasText: 'Docent G' }).locator('.status-label')).toHaveText('Alliberat/ada');
-  await expect(rows.filter({ hasText: 'Docent C' }).locator('.source-mark')).toHaveCount(0);
-  await expect(rows.filter({ hasText: 'Docent G' }).locator('.source-mark')).toHaveCount(0);
+  // L'etiqueta ja diu «Guàrdia»: el nom no porta cap G al costat.
+  await expect(rows.filter({ hasText: 'Docent B' }).locator('.assigned-person strong')).toHaveText('Pere Blanes');
   await expect(rows.filter({ hasText: 'Docent D' })).toContainText('Torna al seu grup');
   await expect(rows.filter({ hasText: 'Docent D' })).toContainText('Sense substitució');
   await expect(rows.filter({ hasText: 'Docent E' })).toHaveClass(/status-info/);
@@ -277,7 +276,7 @@ test('cada cobertura mostra el mateix estat que el full de guàrdies', async ({ 
 
   // Només la A, la B i la G demanen algú que faci la guàrdia; la A encara no té ningú.
   await expect(page.getByRole('button', { name: '4a: 3 guàrdies, 1 sense cobrir' })).toHaveClass(/pending/);
-  await expect(page.getByRole('button', { name: '4a: 3 guàrdies, 1 sense cobrir' }).locator('.counter-count')).toHaveText('3 G');
+  await expect(page.getByRole('button', { name: '4a: 3 guàrdies, 1 sense cobrir' }).locator('.counter-count')).toHaveText('3');
   await expect(page.locator('.kiosk-kpi.is-open')).toContainText('1guàrdia sense cobrir');
 });
 
@@ -298,10 +297,117 @@ test('la gestió mostra la barra comuna i la vista prèvia de la vista que s\'ed
   await expect(page.locator('.app-nav .brand-title')).toHaveText('Pantalles');
   await page.getByRole('button', { name: 'Apps' }).click();
   await expect(page.locator('.apps-popover')).toContainText('Guàrdies');
-  await expect(page.locator('.management-preview')).toContainText('Maria Sureda');
+  const preview = page.frameLocator('.management-preview iframe');
+  await expect(preview.locator('.day-content')).toContainText('Maria Sureda');
+  // El text es veu a la vista prèvia mentre s'escriu, abans i tot de desar-lo.
   await page.getByRole('tab', { name: 'Avís' }).click();
   await page.getByLabel('Avís a la pantalla').fill('Simulacre a les 12.00 h');
-  await expect(page.locator('.management-preview .screen-message')).toHaveText('Simulacre a les 12.00 h');
+  await expect(preview.locator('.screen-message')).toHaveText('Simulacre a les 12.00 h');
+});
+
+test('la vista prèvia de la gestió té la proporció de la pantalla real', async ({ page }) => {
+  await seedScreen(page);
+  await page.goto('/?gestio=1&pantalla=sala-professorat&data=2026-09-11');
+
+  const device = page.locator('.preview-device');
+  const ratio = async () => {
+    const box = await device.boundingBox();
+    return (box.width - 16) / (box.height - 16);
+  };
+  // Per defecte, vertical: com el televisor de la sala.
+  await expect(page.getByRole('button', { name: 'Vertical' })).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(ratio).toBeCloseTo(1080 / 1920, 2);
+  const frame = page.frameLocator('.management-preview iframe');
+  await expect(frame.locator('.day-content')).toContainText('Maria Sureda');
+  expect(await frame.locator('html').evaluate(() => matchMedia('(orientation: portrait)').matches)).toBe(true);
+
+  await page.getByRole('button', { name: 'Horitzontal' }).click();
+  await expect.poll(ratio).toBeCloseTo(1920 / 1080, 2);
+  expect(await frame.locator('html').evaluate(() => innerWidth)).toBe(1920);
+
+  // Es recorda per a la propera vegada.
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Horitzontal' })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('la barra fixa tapa el full de banda a banda', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await seedScreen(page, {
+    ...publicDay,
+    hours: Array.from({ length: 6 }, (_, index) => ({
+      ...publicDay.hours[0], key: `hora-${index}`, label: `${index + 1}a hora`,
+      rows: Array.from({ length: 3 }, (_, row) => ({ ...publicDay.hours[0].rows[0], id: `${index}-${row}` })),
+    })),
+  });
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+  const toolbar = page.locator('.kiosk-toolbar');
+  await expect(toolbar).not.toHaveClass(/is-stuck/);
+
+  await page.evaluate(() => window.scrollTo(0, 900));
+  await expect(toolbar).toHaveClass(/is-stuck/);
+  const box = await toolbar.boundingBox();
+  const width = await page.evaluate(() => document.documentElement.clientWidth);
+  expect(box.y).toBeLessThan(1);
+  expect(box.x).toBeLessThan(1);
+  expect(box.width).toBeGreaterThan(width - 2);
+  const colors = await page.evaluate(() => [
+    getComputedStyle(document.querySelector('.kiosk-toolbar')).backgroundColor,
+    getComputedStyle(document.querySelector('.kiosk')).backgroundColor,
+  ]);
+  expect(colors[0]).toBe(colors[1]);
+});
+
+test('en un televisor apaïsat la lletra de les files és més gran', async ({ page }) => {
+  const size = async (selector) => page.locator(selector).first().evaluate((element) => parseFloat(getComputedStyle(element).fontSize));
+  await seedScreen(page);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+  expect(await size('.guard-row .absent-person strong')).toBe(22);
+  expect(await size('.zone-teacher')).toBe(22);
+
+  await page.setViewportSize({ width: 1080, height: 1920 });
+  expect(await size('.guard-row .absent-person strong')).toBe(17);
+});
+
+test('cada hora té la franja com a títol i al pati destaca qui hi ha', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await seedScreen(page);
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+
+  const first = page.locator('.hour-card[data-hour-key="8:00"]');
+  await expect(first.locator('.hour-badge')).toHaveText('1a');
+  await expect(first.locator('h2')).toHaveText('1a hora, 8:00 – 8:55');
+  await expect(first.getByRole('heading', { name: '1a hora, 8:00 – 8:55' })).toBeVisible();
+  expect(await first.locator('h2 .visually-hidden').evaluate((element) => element.getBoundingClientRect().width)).toBeLessThan(2);
+
+  // Les dues zones omplen tota l'amplada del pati.
+  const zones = await page.locator('.patio-zone').evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().width));
+  const grid = await page.locator('.patio-grid').evaluate((element) => element.clientWidth - 24);
+  expect(zones).toHaveLength(2);
+  expect(Math.abs(zones[0] + zones[1] + 8 - grid)).toBeLessThan(2);
+  await expect(page.locator('.patio-zone').first().locator('.zone-teacher')).toHaveText('Gabriel Calvo');
+});
+
+test('quan no queda cap guàrdia sense cobrir, el resum ho diu', async ({ page }) => {
+  await seedScreen(page);
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+
+  const kpi = page.locator('.kiosk-kpi').first();
+  await expect(kpi).toHaveClass(/is-covered/);
+  await expect(kpi).toHaveText('totes cobertes');
+  await expect(kpi.locator('.kpi-check')).toBeVisible();
+});
+
+test('un dia sense full fa de rellotge i el peu queda a baix', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.clock.setFixedTime(new Date('2026-09-14T07:45:00+02:00'));
+  await seedScreen(page);
+  await page.goto('/?pantalla=sala-professorat');
+
+  await expect(page.getByText("No s'ha publicat el full de guàrdies d'aquest dia")).toBeVisible();
+  await expect(page.locator('.no-day-clock')).toHaveText('07:45');
+  const footer = await page.locator('.kiosk-footer').boundingBox();
+  expect(footer.y + footer.height).toBeGreaterThan(1080 - 40);
 });
 
 async function seedViews(page, views) {

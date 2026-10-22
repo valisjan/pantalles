@@ -6,7 +6,6 @@ import {
   rowCoverLabel,
   rowCoverText,
   rowRole,
-  rowSourceMark,
   rowStatus,
   shortHourLabel,
 } from '../../src/domain/publicDay.js';
@@ -63,12 +62,4 @@ test('distingeix guàrdia, codocència i professorat alliberat', () => {
   assert.deepEqual([guard, coteacher, released, legacy].map(rowCoverLabel), ['Guàrdia', 'Queden amb', 'Alliberat/ada', 'Cobreix']);
   assert.equal(rowCoverLabel({ assigned: '' }), 'Sense cobrir');
   assert.equal(rowCoverLabel({ ...guard, cancelled: true }), 'No realitzada');
-
-  assert.equal(rowSourceMark(guard), 'guard');
-  assert.equal(rowSourceMark(released), '');
-  assert.equal(rowSourceMark({ assigned: 'Llucia', source: 'co-teacher', coTeacher: true }), '');
-  assert.equal(rowSourceMark({ assigned: 'Pere', source: 'guard', cancelled: true }), '');
-  assert.equal(rowSourceMark({ assigned: '', source: '' }), '');
-  // Jornades publicades abans d'afegir l'origen: sense marca.
-  assert.equal(rowSourceMark({ assigned: 'Pere' }), '');
 });

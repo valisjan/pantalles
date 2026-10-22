@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   currentSlot,
+  formatShortClock,
   hourKeyMinutes,
   hourProgress,
   hourRange,
@@ -50,4 +51,9 @@ test('dona la franja i el progrés de l\'hora en curs', () => {
   assert.equal(hourRange('16:00'), '');
   assert.deepEqual(hourProgress(at('11:32'), '11:15'), { ratio: 17 / 55, remaining: 38 });
   assert.equal(hourProgress(at('11:32'), '8:00'), null);
+});
+
+test('el rellotge gran mostra hores i minuts', () => {
+  assert.equal(formatShortClock(at('08:05')), '08:05');
+  assert.equal(formatShortClock(at('14:40')), '14:40');
 });

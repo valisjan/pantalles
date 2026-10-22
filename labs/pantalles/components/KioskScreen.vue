@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   currentSlot,
   formatLongDate,
@@ -149,6 +149,25 @@ const sessions = computed(() => hours.value
 const ready = computed(() => !props.configLoading && !dayLoading.value);
 
 const scroller = ref(null);
+
+// La barra porta un rellotge per quan es baixa pel full; mentre es veu el de la
+// capçalera, no cal repetir-lo (i la barra cap en una sola filera).
+const headerClockVisible = ref(true);
+let clockObserver = null;
+onMounted(() => {
+  if (typeof IntersectionObserver === 'undefined') return;
+  clockObserver = new IntersectionObserver(([entry]) => {
+    headerClockVisible.value = entry.isIntersecting && entry.intersectionRatio > 0.95;
+  }, { threshold: [0, 0.95, 1] });
+  const watchClock = () => {
+    clockObserver.disconnect();
+    const clock = scroller.value?.querySelector('.live-clock');
+    if (clock) clockObserver.observe(clock);
+    else headerClockVisible.value = false;
+  };
+  watchClock();
+  watch(() => props.config.active, () => nextTick(watchClock));
+});
 function centerHour(key) {
   nextTick(() => {
     const card = Array.from(scroller.value?.querySelectorAll('.hour-card') || [])
@@ -171,6 +190,7 @@ function centerCurrentHour() {
 watch([() => slot.value?.key, day, viewType, interacting], centerCurrentHour);
 
 onBeforeUnmount(() => {
+  clockObserver?.disconnect();
   window.clearTimeout(idleTimer);
   window.clearTimeout(rotationTimer);
 });
@@ -230,6 +250,7 @@ onBeforeUnmount(() => {
           :is-today="viewingToday"
           :views="switcherViews"
           :active-view-id="activeView?.id || ''"
+          :clock="!headerClockVisible"
           @jump="jumpToHour"
           @shift-day="shiftDay"
           @today="returnToday"

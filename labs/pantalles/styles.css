@@ -931,7 +931,8 @@
     font-weight: 600;
   }
 
-  .observation-label {
+  .observation-label,
+  .guard-row .observation-label {
     display: block;
     margin-bottom: 4px;
     color: var(--primary-strong);

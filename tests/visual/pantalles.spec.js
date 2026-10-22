@@ -110,7 +110,9 @@ for (const portrait of [false, true]) {
     });
     await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
     const clock = page.locator('.toolbar-clock time');
-    await expect(clock).toHaveText('18:30:00');
+    // A dalt, el rellotge és el de la capçalera: no es repeteix a la barra.
+    await expect(page.locator('.live-clock-time')).toHaveText('18:30:00');
+    await expect(clock).toHaveCount(0);
     await page.getByRole('button', { name: 'Augmenta el text' }).click();
     for (const fraction of [1, 0.5, 0.1]) {
       await page.evaluate((fraction) => window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * fraction), fraction);

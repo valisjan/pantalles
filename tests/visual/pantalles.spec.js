@@ -472,6 +472,28 @@ test('avisa quan es mira un altre dia i hi torna amb un toc', async ({ page }) =
   await expect(page.getByText('Maria Sureda')).toBeVisible();
 });
 
+test('el botó Avui de la barra torna al dia d’avui, també amb la barra fixa', async ({ page }) => {
+  await page.setViewportSize({ width: 1080, height: 1920 });
+  await page.clock.setFixedTime(new Date('2026-09-11T09:00:00+02:00'));
+  await seedScreen(page, {
+    ...publicDay,
+    hours: Array.from({ length: 8 }, (_, index) => ({
+      ...publicDay.hours[0], key: `hora-${index}`, label: `${index + 1}a hora`,
+      rows: Array.from({ length: 4 }, (_, row) => ({ ...publicDay.hours[0].rows[0], id: `${index}-${row}` })),
+    })),
+  });
+  await page.goto('/?pantalla=sala-professorat');
+  const toolbar = page.locator('.kiosk-toolbar');
+
+  await page.evaluate(() => window.scrollTo(0, 1200));
+  await expect(toolbar).toHaveClass(/is-stuck/);
+  await toolbar.getByRole('button', { name: 'Dia següent' }).click();
+  await expect(page.locator('.other-day')).toContainText('dissabte, 12 de setembre');
+  await toolbar.getByRole('button', { name: 'Avui', exact: true }).click();
+  await expect(page.locator('.other-day')).toHaveCount(0);
+  await expect(page.getByText('Maria Sureda').first()).toBeVisible();
+});
+
 test('en una pantalla vertical les hores surten a dalt, com a la vista prèvia de la gestió', async ({ page }) => {
   await page.setViewportSize({ width: 1080, height: 1920 });
   await seedScreen(page);

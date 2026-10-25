@@ -1,6 +1,16 @@
-export const PANTALLES_VERSION = '1.7.0';
+export const PANTALLES_VERSION = '1.8.0';
 
 export const PANTALLES_RELEASES = [
+  {
+    version: '1.8.0',
+    date: '25 d’octubre de 2026',
+    changes: [
+      'A partir de les 15:00, i el cap de setmana, el quiosc mostra el full del dia lectiu següent tan bon punt es publica, amb un avís que ho diu. «Avui» continua portant al d’avui.',
+      'Els anuncis poden ser informatius, importants (ambre) o urgents (vermell). El text es centra, la lletra s’adapta a la llargada i, si són programats, diuen fins quan es veuen.',
+      'Les hores acabades es continuen llegint bé: només la capçalera grisa indica que ja han passat.',
+      'La barra explica què vol dir el color de cada hora: sense guàrdies, cobertes o en falten.',
+    ],
+  },
   {
     version: '1.7.0',
     date: '22 d’octubre de 2026',

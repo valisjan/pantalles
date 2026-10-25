@@ -164,6 +164,7 @@ test('la pantalla destaca i actualitza la sessió actual', async ({ page }) => {
   // L'hora acabada es continua llegint: només la capçalera indica que ja ha passat.
   const past = page.locator('.hour-card.past[data-hour-key="8:00"]');
   await expect(past).toHaveCSS('opacity', '0.9');
+  await expect(page.locator('.session-legend')).toHaveText(/sense guàrdies\s*cobertes\s*en falten/);
 });
 
 test('la pantalla identifica el cap de setmana com a dia no lectiu', async ({ page }) => {

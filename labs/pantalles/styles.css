@@ -486,15 +486,36 @@
     font-size: var(--text-sm);
   }
 
-  .session-counters-label {
-    padding: 0 6px 0 8px;
+  /* Llegenda dels colors de les hores, amb el mateix color que cada botó. */
+  .session-legend {
+    display: grid;
+    gap: 2px;
+    padding: 0 8px 0 6px;
     color: var(--muted);
     font-size: var(--text-xs);
     font-weight: 700;
-    letter-spacing: 0.04em;
-    line-height: 1.25;
-    text-transform: uppercase;
+    line-height: 1.2;
+    white-space: nowrap;
   }
+
+  .session-legend > span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .session-legend > span::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    flex: 0 0 auto;
+    border: 1px solid transparent;
+    border-radius: 3px;
+  }
+
+  .session-legend .legend-clear::before { border-color: var(--green-border); background: var(--green-soft); }
+  .session-legend .legend-busy::before { border-color: var(--border-strong); background: var(--surface-strong); }
+  .session-legend .legend-pending::before { border-color: var(--amber-border); background: var(--amber-soft); }
 
   /* Cada botó és una hora: l'hora mana i el nombre de guàrdies és una xapa. */
   .session-counter {

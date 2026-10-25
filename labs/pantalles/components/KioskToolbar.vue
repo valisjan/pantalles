@@ -35,7 +35,12 @@ function counterLabel(session) {
 
     <template v-if="dayControls">
       <div v-if="sessions.length" class="session-counters" aria-label="Guàrdies per hora">
-        <span class="session-counters-label" aria-hidden="true">Guàrdies<br />per hora</span>
+        <!-- Què vol dir el color de cada hora: la llegenda substitueix el títol. -->
+        <span class="session-legend" aria-hidden="true">
+          <span class="legend-clear">sense guàrdies</span>
+          <span class="legend-busy">cobertes</span>
+          <span class="legend-pending">en falten</span>
+        </span>
         <button
           v-for="session in sessions"
           :key="session.key"

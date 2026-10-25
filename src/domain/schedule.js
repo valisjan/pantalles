@@ -85,6 +85,16 @@ export function scheduleStatus(schedule, now) {
   return 'waiting';
 }
 
+// Fins quan es veu una vista programada que ara és en pantalla: l'hora d'acabar
+// d'avui o, si dura uns quants dies, el darrer dia. Buit si no té final.
+export function scheduleUntilLabel(schedule, now) {
+  if (!isScheduled(schedule) || !isScheduleActive(schedule, now)) return '';
+  if (schedule.end) return `Fins a les ${schedule.end}`;
+  const final = lastDay(schedule);
+  if (final && final > localDateString(now)) return `Fins al ${formatDay(final, { day: 'numeric', month: 'long' })}`;
+  return '';
+}
+
 export const SCHEDULE_STATUS_LABELS = Object.freeze({
   always: 'Sempre',
   active: 'Ara en pantalla',

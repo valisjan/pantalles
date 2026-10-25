@@ -41,6 +41,8 @@ export const DEFAULT_SCREEN_CONFIG = Object.freeze({
 
 const AVAILABLE_MODULES = ['guardies', 'pati', 'sortides'];
 const VIEW_TYPES = ['guardies', 'drive', 'canva', 'text'];
+// Importància d'un anunci: dona el color de la pantalla.
+export const NOTICE_TONES = Object.freeze(['info', 'important', 'urgent']);
 
 function normalizeModules(modules) {
   return Array.from(new Set(Array.isArray(modules) ? modules : []))
@@ -73,6 +75,7 @@ function normalizeViews(data = {}) {
       driveUrl: String(view?.driveUrl || view?.assetUrl || '').slice(0, 2000),
       canvaUrl: String(view?.canvaUrl || '').slice(0, 2000),
       text: String(view?.text || '').slice(0, 600),
+      tone: NOTICE_TONES.includes(view?.tone) ? view.tone : 'info',
       schedule: normalizeSchedule(view?.schedule),
     };
   });

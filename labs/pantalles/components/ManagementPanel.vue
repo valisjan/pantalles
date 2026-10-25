@@ -57,6 +57,19 @@ function save() {
   emit('save');
 }
 
+// Importància d'un anunci: el color amb què surt a la pantalla.
+const NOTICE_TONES = [
+  { value: 'info', label: 'Informatiu' },
+  { value: 'important', label: 'Important' },
+  { value: 'urgent', label: 'Urgent' },
+];
+
+function setTone(value) {
+  if (!editingView.value) return;
+  editingView.value.tone = value;
+  save();
+}
+
 function uniqueViewId() {
   let number = views.value.length + 1;
   let id = `vista-${number}`;
@@ -261,6 +274,19 @@ async function copyKioskUrl() {
             <label>Text de l’anunci
               <textarea v-model="editingView.text" rows="5" maxlength="600" placeholder="Per exemple: Simulacre d’evacuació a les 12.00 h. Seguiu les indicacions del professorat." @input="save"></textarea>
             </label>
+            <div class="tone-picker">
+              <span id="notice-tone-label">Importància</span>
+              <div class="segmented" role="group" aria-labelledby="notice-tone-label">
+                <button
+                  v-for="tone in NOTICE_TONES"
+                  :key="tone.value"
+                  type="button"
+                  :class="[`tone-${tone.value}`, { active: (editingView.tone || 'info') === tone.value }]"
+                  :aria-pressed="(editingView.tone || 'info') === tone.value"
+                  @click="setTone(tone.value)"
+                >{{ tone.label }}</button>
+              </div>
+            </div>
           </template>
 
           <ScheduleEditor v-if="several" :view="editingView" @save="save" />

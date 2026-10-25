@@ -451,12 +451,16 @@ const guardiesView = { id: 'guardies', name: 'Guàrdies del dia', type: 'guardie
 test('un anunci programat ocupa la pantalla només durant la seva franja', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-09-11T13:45:00+02:00'));
   await seedViews(page, [guardiesView, {
-    id: 'claustre', name: 'Claustre', type: 'text', text: 'Claustre a la biblioteca a les 14.00 h',
+    id: 'claustre', name: 'Claustre', type: 'text', text: 'Claustre a la biblioteca a les 14.00 h', tone: 'urgent',
     schedule: { mode: 'scheduled', from: '2026-09-11', start: '13:30', end: '14:30', exclusive: true },
   }]);
   await page.goto('/?pantalla=sala-professorat');
 
-  await expect(page.locator('.notice-view')).toHaveText('Claustre a la biblioteca a les 14.00 h');
+  await expect(page.locator('.notice-view p')).toHaveText('Claustre a la biblioteca a les 14.00 h');
+  await expect(page.locator('.notice-view')).toHaveClass(/tone-urgent/);
+  await expect(page.locator('.notice-view')).toHaveClass(/is-short/);
+  await expect(page.locator('.notice-tone')).toHaveText('Urgent');
+  await expect(page.locator('.notice-until')).toHaveText('Fins a les 14:30');
   await expect(page.getByRole('heading', { name: 'Claustre' })).toBeVisible();
   await expect(page.locator('.view-switcher')).toHaveCount(0);
 
@@ -573,11 +577,14 @@ test('la gestió programa un anunci per ara amb un sol toc', async ({ page }) =>
   await page.getByRole('button', { name: 'Ara · 1 hora' }).click();
   await expect(page.locator('.schedule-summary')).toContainText('Ara en pantalla');
   await expect(page.locator('.schedule-summary')).toContainText('10:05–11:05');
+  await page.getByRole('button', { name: 'Important', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Important', exact: true })).toHaveAttribute('aria-pressed', 'true');
 
   await expect.poll(async () => page.evaluate(() => (
     JSON.parse(localStorage.getItem('quota-e2e-pantalla:sala-professorat')).views?.find((view) => view.type === 'text') || null
   ))).toMatchObject({
     text: 'Simulacre a les 12.00 h',
+    tone: 'important',
     schedule: { mode: 'scheduled', from: '2026-09-11', start: '10:05', end: '11:05', exclusive: true },
   });
 });

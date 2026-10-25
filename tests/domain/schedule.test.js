@@ -8,6 +8,7 @@ import {
   scheduleForTomorrow,
   scheduleFromNow,
   scheduleStatus,
+  scheduleUntilLabel,
 } from '../../src/domain/schedule.js';
 
 const at = (value) => new Date(`${value}:00`);
@@ -86,4 +87,16 @@ test('el contingut nou no surt fins al seu moment i una vista buida no surt mai'
   const emptyCanva = { id: 'buit', type: 'canva', canvaUrl: '', schedule: normalizeSchedule({}) };
   const emptyText = { id: 'text', type: 'text', text: '  ', schedule: normalizeSchedule({}) };
   assert.deepEqual(playlistFor([guardies, emptyCanva, emptyText, draft], '', now).map((view) => view.id), ['guardies']);
+});
+
+test('un anunci en pantalla diu fins quan es veurà', () => {
+  const now = at('2026-10-22T13:40');
+  const today = normalizeSchedule({ mode: 'scheduled', from: '2026-10-22', start: '13:30', end: '14:30' });
+  assert.equal(scheduleUntilLabel(today, now), 'Fins a les 14:30');
+  const days = normalizeSchedule({ mode: 'scheduled', from: '2026-10-20', to: '2026-10-30' });
+  assert.equal(scheduleUntilLabel(days, now), 'Fins al 30 d’octubre');
+  // Sense final, programada per a més endavant o sempre: res.
+  assert.equal(scheduleUntilLabel(normalizeSchedule({ mode: 'scheduled', from: '2026-10-22' }), now), '');
+  assert.equal(scheduleUntilLabel(normalizeSchedule({ mode: 'scheduled', from: '2026-10-23', end: '10:00' }), now), '');
+  assert.equal(scheduleUntilLabel(normalizeSchedule({}), now), '');
 });

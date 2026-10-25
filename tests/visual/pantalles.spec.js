@@ -161,6 +161,9 @@ test('la pantalla destaca i actualitza la sessió actual', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-09-11T08:56:00+02:00'));
   await page.waitForTimeout(1_100);
   await expect(page.locator('.hour-card.current-session')).toContainText('2a hora');
+  // L'hora acabada es continua llegint: només la capçalera indica que ja ha passat.
+  const past = page.locator('.hour-card.past[data-hour-key="8:00"]');
+  await expect(past).toHaveCSS('opacity', '0.9');
 });
 
 test('la pantalla identifica el cap de setmana com a dia no lectiu', async ({ page }) => {

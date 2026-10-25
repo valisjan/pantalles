@@ -912,7 +912,14 @@
 
   .hour-card.current-session .hour-card-head h2 { font-size: var(--text-2xl); }
 
-  .hour-card.past:not(.current-session) { opacity: 0.6; }
+  /* Hores acabades: es continuen llegint (el professorat hi busca les absències
+     passades); només la capçalera grisa indica que ja han passat. */
+  .hour-card.past:not(.current-session) { opacity: 0.9; }
+
+  .hour-card.past:not(.current-session) .hour-card-head { background: var(--surface-strong); }
+
+  .hour-card.past:not(.current-session) .hour-card-head h2,
+  .hour-card.past:not(.current-session) .hour-badge { color: var(--muted); }
 
   .guard-row {
     position: relative;

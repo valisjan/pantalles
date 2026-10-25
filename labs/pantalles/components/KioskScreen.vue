@@ -61,12 +61,33 @@ function registerInteraction() {
 if (!props.previewViewId) useKioskUpdates(computed(() => !interacting.value));
 
 const today = computed(() => localDateString(minute.value));
-const selectedDate = computed(() => localDate.value || props.queryDate || today.value);
 const selectedCourse = computed(() => props.queryCourse || props.config.courseId || DEFAULT_SCREEN_CONFIG.courseId);
+
+// A partir de les 15:00 (i el cap de setmana) es mostra el full del dia lectiu
+// següent si ja està publicat: qui passa per la sala a la tarda ja veu el de demà.
+// Amb una data fixada a l'adreça, mana aquella.
+const SCHOOL_DAY_END = 15 * 60;
+const upcomingDate = computed(() => {
+  if (props.queryDate) return '';
+  const now = minute.value;
+  const weekend = now.getDay() === 0 || now.getDay() === 6;
+  if (!weekend && now.getHours() * 60 + now.getMinutes() < SCHOOL_DAY_END) return '';
+  let date = shiftIsoDate(today.value, 1);
+  while (isWeekend(date)) date = shiftIsoDate(date, 1);
+  return date;
+});
+const { day: upcomingDay } = usePublicDay(selectedCourse, upcomingDate);
+const nextDayDate = computed(() => (upcomingDate.value && upcomingDay.value ? upcomingDate.value : ''));
+
+const selectedDate = computed(() => localDate.value || props.queryDate || nextDayDate.value || today.value);
 const scale = computed(() => localScale.value ?? props.config.scale ?? 100);
 const viewingToday = computed(() => selectedDate.value === today.value);
 // Només s'avisa quan algú ha canviat de dia a la pantalla, no amb una data fixada a l'adreça.
 const browsingOtherDay = computed(() => Boolean(localDate.value) && !viewingToday.value);
+const showingNextDay = computed(() => !localDate.value && Boolean(nextDayDate.value) && selectedDate.value === nextDayDate.value);
+const nextDayLabel = computed(() => (nextDayDate.value === shiftIsoDate(today.value, 1)
+  ? 'de demà'
+  : `del ${formatLongDate(nextDayDate.value).toLowerCase()}`));
 
 function shiftDay(amount) {
   localDate.value = shiftIsoDate(selectedDate.value, amount);
@@ -229,6 +250,9 @@ onBeforeUnmount(() => {
         <div v-if="viewType === 'guardies' && browsingOtherDay" class="kiosk-banner other-day" role="status">
           <span>Estàs veient el full del <strong>{{ formatLongDate(selectedDate).toLowerCase() }}</strong></span>
           <button type="button" @click="returnToday">Torna a avui</button>
+        </div>
+        <div v-else-if="viewType === 'guardies' && showingNextDay" class="kiosk-banner next-day" role="status">
+          Avui ja no hi ha classes: es mostra el full <strong>{{ nextDayLabel }}</strong>
         </div>
 
         <div v-if="viewType === 'guardies' && ready && day" class="kiosk-summary" aria-label="Resum de la jornada">

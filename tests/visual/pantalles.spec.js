@@ -285,9 +285,36 @@ test('el quiosc passa sol al dia següent a mitjanit', async ({ page }) => {
   await seedScreen(page);
   await page.goto('/?pantalla=sala-professorat');
 
-  await expect(page.getByText("No s'ha publicat el full de guàrdies d'aquest dia")).toBeVisible();
-  await page.clock.runFor(60_000);
+  // A la nit ja es veu el full de demà, amb l'avís; a mitjanit passa a ser el d'avui.
+  await expect(page.locator('.kiosk-banner.next-day')).toContainText('de demà');
   await expect(page.getByText('Maria Sureda')).toBeVisible();
+  await page.clock.runFor(60_000);
+  await expect(page.locator('.kiosk-banner.next-day')).toHaveCount(0);
+  await expect(page.getByText('Maria Sureda')).toBeVisible();
+});
+
+test('a la tarda mostra el full de demà si ja està publicat, i si no, el d’avui', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-09-10T14:59:00+02:00') });
+  await seedScreen(page);
+  await page.goto('/?pantalla=sala-professorat');
+  await expect(page.getByText("No s'ha publicat el full de guàrdies d'aquest dia")).toBeVisible();
+
+  await page.clock.runFor(60_000);
+  await expect(page.locator('.kiosk-banner.next-day')).toHaveText('Avui ja no hi ha classes: es mostra el full de demà');
+  await expect(page.getByText('Maria Sureda')).toBeVisible();
+  await expect(page.locator('.kiosk-date')).toContainText('11 de setembre');
+  // «Avui» encara porta al d'avui.
+  await page.locator('.kiosk-toolbar').getByRole('button', { name: 'Avui', exact: true }).click();
+  await expect(page.getByText("No s'ha publicat el full de guàrdies d'aquest dia")).toBeVisible();
+});
+
+test('si el full de demà encara no és publicat, a la tarda es continua veient el d’avui', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-09-11T16:00:00+02:00'));
+  await seedScreen(page);
+  await page.goto('/?pantalla=sala-professorat');
+  await expect(page.getByText('Maria Sureda')).toBeVisible();
+  await expect(page.locator('.kiosk-banner.next-day')).toHaveCount(0);
+  await expect(page.locator('.kiosk-date')).toContainText('11 de setembre');
 });
 
 test('la gestió mostra la barra comuna i la vista prèvia de la vista que s\'edita', async ({ page }) => {

@@ -599,6 +599,13 @@
     font-weight: 600;
   }
 
+  .kiosk-banner.next-day {
+    border-color: var(--primary-border);
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+    font-weight: 600;
+  }
+
   .kiosk-banner.other-day button {
     min-height: 3rem;
     border: 0;

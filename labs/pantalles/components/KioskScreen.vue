@@ -10,7 +10,7 @@ import {
   localDateString,
   shiftIsoDate,
 } from '../../../src/domain/calendar.js';
-import { daySummary, hourSummary, isPatioHour, shortHourLabel } from '../../../src/domain/publicDay.js';
+import { daySummary, hourSummary, isPatioHour, outingDetail, shortHourLabel } from '../../../src/domain/publicDay.js';
 import { playlistFor } from '../../../src/domain/schedule.js';
 import { DEFAULT_SCREEN_CONFIG } from '../../../src/services/pantallesStorage.js';
 import { useClock } from '../composables/useClock.js';
@@ -43,7 +43,6 @@ const { online } = usePageState();
 const interacting = ref(false);
 const manualViewId = ref('');
 const localDate = ref('');
-const localScale = ref(null);
 let idleTimer = null;
 
 function registerInteraction() {
@@ -52,7 +51,6 @@ function registerInteraction() {
   idleTimer = window.setTimeout(() => {
     interacting.value = false;
     localDate.value = '';
-    localScale.value = null;
     manualViewId.value = '';
   }, IDLE_RESET_MS);
 }
@@ -80,7 +78,7 @@ const { day: upcomingDay } = usePublicDay(selectedCourse, upcomingDate);
 const nextDayDate = computed(() => (upcomingDate.value && upcomingDay.value ? upcomingDate.value : ''));
 
 const selectedDate = computed(() => localDate.value || props.queryDate || nextDayDate.value || today.value);
-const scale = computed(() => localScale.value ?? props.config.scale ?? 100);
+const scale = computed(() => props.config.scale ?? 100);
 const viewingToday = computed(() => selectedDate.value === today.value);
 // Només s'avisa quan algú ha canviat de dia a la pantalla, no amb una data fixada a l'adreça.
 const browsingOtherDay = computed(() => Boolean(localDate.value) && !viewingToday.value);
@@ -96,16 +94,6 @@ function shiftDay(amount) {
 
 function returnToday() {
   localDate.value = today.value;
-  registerInteraction();
-}
-
-function changeScale(amount) {
-  localScale.value = Math.min(140, Math.max(80, scale.value + amount));
-  registerInteraction();
-}
-
-function resetScale() {
-  localScale.value = null;
   registerInteraction();
 }
 
@@ -148,7 +136,6 @@ watch(() => props.configRevision, () => {
   rotationIndex.value = 0;
   manualViewId.value = '';
   localDate.value = '';
-  localScale.value = null;
 });
 
 // Jornada publicada.
@@ -269,27 +256,25 @@ onBeforeUnmount(() => {
             <strong :key="summary.absences" class="kpi-value">{{ summary.absences }}</strong>
             <span>{{ summary.absences === 1 ? 'absència' : 'absències' }}</span>
           </div>
-          <div v-if="summary.outings" class="kiosk-kpi">
-            <strong :key="summary.outings" class="kpi-value">{{ summary.outings }}</strong>
-            <span>{{ summary.outings === 1 ? 'grup fora' : 'grups fora' }}</span>
-          </div>
         </div>
+        <p v-if="viewType === 'guardies' && ready && day && outings.length" class="kiosk-outings" role="note">
+          <span class="kiosk-outings-title">Sortides complementàries: </span>
+          <template v-for="(group, index) in outings" :key="group.id">
+            <span v-if="index" class="outing-separator" aria-hidden="true"> · </span>
+            <span class="outing-item" :data-outing-group="group.id"><strong>{{ group.label }}</strong>{{ outingDetail(group) }}</span>
+          </template>
+        </p>
 
         <KioskToolbar
           v-if="viewType === 'guardies' || switcherViews.length > 1"
           :day-controls="viewType === 'guardies'"
           :sessions="ready && day ? sessions : []"
-          :scale="scale"
-          :is-today="viewingToday"
           :views="switcherViews"
           :active-view-id="activeView?.id || ''"
           :clock="!headerClockVisible"
           :class="{ 'is-stuck': !headerClockVisible }"
           @jump="jumpToHour"
           @shift-day="shiftDay"
-          @today="returnToday"
-          @scale="changeScale"
-          @reset-scale="resetScale"
           @select-view="selectView"
         />
 
@@ -316,18 +301,6 @@ onBeforeUnmount(() => {
         <div v-else :key="`day-${selectedDate}`" class="day-content">
           <HourCard v-for="(hour, index) in hours" :key="hour.key" :hour="hour" :index="index" :current="isCurrent(hour)" :past="isPast(hour)" />
 
-          <section v-if="outings.length" class="hour-card outings-card" :style="{ '--i': hours.length }">
-            <header class="hour-card-head">
-              <div class="hour-title"><h2>Grups de sortida</h2></div>
-              <div class="session-meta"><span>{{ outings.length }} {{ outings.length === 1 ? 'grup' : 'grups' }}</span></div>
-            </header>
-            <div class="outings-grid">
-              <article v-for="group in outings" :key="group.id">
-                <strong>{{ group.label }}</strong>
-                <span>{{ group.partial ? 'Sortida parcial' : 'Fora del centre' }}</span>
-              </article>
-            </div>
-          </section>
         </div>
         </Transition>
 

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  outingDetail,
   daySummary,
   hourSummary,
   rowCoverLabel,
@@ -62,4 +63,10 @@ test('distingeix guàrdia, codocència i professorat alliberat', () => {
   assert.deepEqual([guard, coteacher, released, legacy].map(rowCoverLabel), ['Guàrdia', 'Queden amb', 'Alliberat/ada', 'Cobreix']);
   assert.equal(rowCoverLabel({ assigned: '' }), 'Sense cobrir');
   assert.equal(rowCoverLabel({ ...guard, cancelled: true }), 'No realitzada');
+});
+
+test('outingDetail indica si surt part del grup i l\'horari', () => {
+  assert.equal(outingDetail({ label: '3ESO-A', from: '8:00', to: '14:00' }), ' de 8:00 a 14:00');
+  assert.equal(outingDetail({ label: '3ESO-A', partial: true, from: '9:50', to: '13:05' }), ' (part del grup) de 9:50 a 13:05');
+  assert.equal(outingDetail({ label: '3ESO-A' }), '');
 });

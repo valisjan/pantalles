@@ -26,7 +26,7 @@ const publicDay = {
       },
     },
   ],
-  groupsOut: [{ id: '2ESOA', label: '2ESO-A', partial: false }],
+  groupsOut: [{ id: '2ESOA', label: '2ESO-A', partial: false, from: '8:00', to: '14:00' }],
 };
 
 async function seedScreen(page, day = publicDay) {
@@ -113,11 +113,9 @@ for (const portrait of [false, true]) {
     // A dalt, el rellotge és el de la capçalera: no es repeteix a la barra.
     await expect(page.locator('.live-clock-time')).toHaveText('18:30:00');
     await expect(clock).toHaveCount(0);
-    await page.getByRole('button', { name: 'Augmenta el text' }).click();
     for (const fraction of [1, 0.5, 0.1]) {
       await page.evaluate((fraction) => window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * fraction), fraction);
       await expect(clock).toBeInViewport({ ratio: 1 });
-      await expect(page.getByRole('button', { name: 'Augmenta el text' })).toBeInViewport({ ratio: 1 });
       await expect(page.getByRole('button', { name: 'Dia anterior' })).toBeInViewport({ ratio: 1 });
     }
     await page.clock.setFixedTime(new Date('2026-09-11T18:30:05+02:00'));
@@ -137,17 +135,20 @@ test('pantalla de sala mostra la jornada publicada en vertical', async ({ page }
   await expect(page.getByText('Maria Sureda')).toBeVisible();
   await expect(page.getByText('Pere Blanes')).toBeVisible();
   await expect(page.getByText('Banys', { exact: true })).toBeVisible();
-  await expect(page.getByText('2ESO-A')).toBeVisible();
+  const outings = page.locator('.kiosk-outings');
+  await expect(outings).toContainText('Sortides complementàries:');
+  await expect(outings.locator('[data-outing-group="2ESOA"]')).toHaveText('2ESO-A de 8:00 a 14:00');
+  await expect(page.getByText(/grups? fora/)).toHaveCount(0);
   await expect(page.getByText('Claustre a les 14.00 h')).toBeVisible();
   await expect(page.locator('.live-clock')).toContainText(/\d{2}:\d{2}:\d{2}/);
   await expect(page.getByRole('button', { name: '1a: 1 guàrdia' })).toHaveClass(/busy/);
   await expect(page.getByRole('button', { name: '2a: 0 guàrdies' })).toHaveClass(/clear/);
 
-  const sizeBefore = await page.getByRole('heading', { name: 'Guàrdies del dia' }).boundingBox();
-  await page.getByRole('button', { name: 'Augmenta el text' }).click();
-  await expect(page.getByRole('button', { name: '110%' })).toBeVisible();
-  const sizeAfter = await page.getByRole('heading', { name: 'Guàrdies del dia' }).boundingBox();
-  expect(sizeAfter.height).toBeGreaterThan(sizeBefore.height * 1.05);
+  // Pantalla tàctil: ni botó «Avui» ni controls de mida del text a la barra.
+  const toolbar = page.locator('.kiosk-toolbar');
+  await expect(toolbar.getByRole('button', { name: 'Avui', exact: true })).toHaveCount(0);
+  await expect(toolbar.getByRole('button', { name: 'Augmenta el text' })).toHaveCount(0);
+  await expect(toolbar.getByRole('button', { name: 'Redueix el text' })).toHaveCount(0);
 });
 
 test('la pantalla destaca i actualitza la sessió actual', async ({ page }) => {
@@ -307,8 +308,8 @@ test('a la tarda mostra el full de demà si ja està publicat, i si no, el d’a
   await expect(page.locator('.kiosk-banner.next-day')).toHaveText('Avui ja no hi ha classes: es mostra el full de demà');
   await expect(page.getByText('Maria Sureda')).toBeVisible();
   await expect(page.locator('.kiosk-date')).toContainText('11 de setembre');
-  // «Avui» encara porta al d'avui.
-  await page.locator('.kiosk-toolbar').getByRole('button', { name: 'Avui', exact: true }).click();
+  // La fletxa enrere torna al full d'avui.
+  await page.locator('.kiosk-toolbar').getByRole('button', { name: 'Dia anterior' }).click();
   await expect(page.getByText("No s'ha publicat el full de guàrdies d'aquest dia")).toBeVisible();
 });
 
@@ -524,7 +525,7 @@ test('el botó Avui de la barra torna al dia d’avui, també amb la barra fixa'
   await expect(toolbar).toHaveClass(/is-stuck/);
   await toolbar.getByRole('button', { name: 'Dia següent' }).click();
   await expect(page.locator('.other-day')).toContainText('dissabte, 12 de setembre');
-  await toolbar.getByRole('button', { name: 'Avui', exact: true }).click();
+  await page.locator('.other-day').getByRole('button', { name: 'Torna a avui' }).click();
   await expect(page.locator('.other-day')).toHaveCount(0);
   await expect(page.getByText('Maria Sureda').first()).toBeVisible();
 });
@@ -599,7 +600,7 @@ test('les franges horàries van sempre una sota l\'altra i a tota l\'amplada', a
   await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
 
   const cards = page.locator('.day-content > .hour-card');
-  await expect(cards).toHaveCount(4);
+  await expect(cards).toHaveCount(3);
   const boxes = await cards.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON()));
   const content = await page.locator('.day-content').evaluate((element) => element.getBoundingClientRect().width);
   boxes.forEach((box, index) => {

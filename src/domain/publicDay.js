@@ -86,3 +86,10 @@ export function shortHourLabel(hour, index) {
   if (isPatioHour(hour)) return 'Pati';
   return String(hour?.label || '').match(/^\d+a/)?.[0] || `${index + 1}a`;
 }
+
+// Detall d'una sortida complementària: « (part del grup) de 8:00 a 14:00».
+export function outingDetail(group) {
+  const partial = group?.partial ? ' (part del grup)' : '';
+  const time = group?.from && group?.to ? ` de ${group.from} a ${group.to}` : '';
+  return `${partial}${time}`;
+}

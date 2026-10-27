@@ -468,24 +468,6 @@
 
   .kiosk-action-group button:hover { background: var(--surface-strong); }
 
-  .kiosk-action-group .today-button {
-    background: var(--primary-soft);
-    color: var(--primary-strong);
-    padding: 0 16px;
-    font-size: var(--text-md);
-  }
-
-  .kiosk-action-group .today-button.is-today {
-    background: transparent;
-    color: var(--muted);
-  }
-
-  .kiosk-action-group .scale-button {
-    min-width: 4.3rem;
-    color: var(--muted);
-    font-size: var(--text-sm);
-  }
-
   /* Llegenda dels colors de les hores, amb el mateix color que cada botó. */
   .session-legend {
     display: grid;
@@ -1051,20 +1033,15 @@
     overflow-wrap: anywhere;
   }
 
-  /* Pati i sortides. Les zones del pati s'estiren fins a omplir l'amplada; els
-     grups de sortida són etiquetes curtes i es queden compactes. */
-  .patio-grid,
-  .outings-grid {
+  /* Pati: les zones s'estiren fins a omplir l'amplada. */
+  .patio-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
     gap: 8px;
     padding: 12px;
   }
 
-  .patio-grid { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
-
-  .patio-zone,
-  .outings-grid article {
+  .patio-zone {
     display: grid;
     min-height: 4.25rem;
     align-content: center;
@@ -1075,13 +1052,24 @@
     padding: 10px 12px;
   }
 
-  .outings-grid strong { font-size: var(--text-md); }
-
-  .outings-grid span {
-    color: var(--muted);
-    font-size: var(--text-md);
-    font-weight: 600;
+  /* Sortides complementàries: una línia sota el resum del dia. */
+  .kiosk-outings {
+    margin: 0;
+    border: 1px solid var(--amber-border);
+    border-radius: 12px;
+    background: var(--amber-soft);
+    color: var(--text);
+    padding: 10px 16px;
+    font-size: var(--text-lg);
+    line-height: 1.35;
   }
+
+  .kiosk-outings-title {
+    color: var(--amber);
+    font-weight: 800;
+  }
+
+  .kiosk-outings .outing-separator { color: var(--muted); }
 
   /* Al pati es busca qui hi ha: el nom destaca i la zona és l'etiqueta. */
   .zone-name {

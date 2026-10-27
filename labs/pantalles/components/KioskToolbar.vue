@@ -5,14 +5,12 @@ defineProps({
   // Controls del full de guàrdies; a les altres vistes només hi ha el selector.
   dayControls: { type: Boolean, default: true },
   sessions: { type: Array, default: () => [] },
-  scale: { type: Number, default: 100 },
-  isToday: { type: Boolean, default: true },
   views: { type: Array, default: () => [] },
   activeViewId: { type: String, default: '' },
   // El rellotge de la barra només surt quan el de la capçalera ja no es veu.
   clock: { type: Boolean, default: true },
 });
-const emit = defineEmits(['jump', 'shift-day', 'today', 'scale', 'reset-scale', 'select-view']);
+const emit = defineEmits(['jump', 'shift-day', 'select-view']);
 
 function counterLabel(session) {
   return `${session.label}: ${session.guards} ${session.guards === 1 ? 'guàrdia' : 'guàrdies'}${session.open ? `, ${session.open} sense cobrir` : ''}`;
@@ -67,15 +65,9 @@ function counterLabel(session) {
           <button type="button" aria-label="Dia anterior" @click="emit('shift-day', -1)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
           </button>
-          <button type="button" class="today-button" :class="{ 'is-today': isToday }" @click="emit('today')">Avui</button>
           <button type="button" aria-label="Dia següent" @click="emit('shift-day', 1)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
           </button>
-        </div>
-        <div class="kiosk-action-group" role="group" aria-label="Mida del text">
-          <button type="button" aria-label="Redueix el text" @click="emit('scale', -10)">−</button>
-          <button type="button" class="scale-button" @click="emit('reset-scale')">{{ scale }}%</button>
-          <button type="button" aria-label="Augmenta el text" @click="emit('scale', 10)">+</button>
         </div>
       </div>
     </template>

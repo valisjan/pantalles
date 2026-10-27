@@ -10,7 +10,7 @@ import {
   localDateString,
   shiftIsoDate,
 } from '../../../src/domain/calendar.js';
-import { daySummary, hourSummary, isPatioHour, outingDetail, shortHourLabel } from '../../../src/domain/publicDay.js';
+import { daySummary, hourSummary, isPatioHour, shortHourLabel } from '../../../src/domain/publicDay.js';
 import { playlistFor } from '../../../src/domain/schedule.js';
 import { DEFAULT_SCREEN_CONFIG } from '../../../src/services/pantallesStorage.js';
 import { useClock } from '../composables/useClock.js';
@@ -257,18 +257,12 @@ onBeforeUnmount(() => {
             <span>{{ summary.absences === 1 ? 'absència' : 'absències' }}</span>
           </div>
         </div>
-        <p v-if="viewType === 'guardies' && ready && day && outings.length" class="kiosk-outings" role="note">
-          <span class="kiosk-outings-title">Sortides complementàries: </span>
-          <template v-for="(group, index) in outings" :key="group.id">
-            <span v-if="index" class="outing-separator" aria-hidden="true"> · </span>
-            <span class="outing-item" :data-outing-group="group.id"><strong>{{ group.label }}</strong>{{ outingDetail(group) }}</span>
-          </template>
-        </p>
 
         <KioskToolbar
           v-if="viewType === 'guardies' || switcherViews.length > 1"
           :day-controls="viewType === 'guardies'"
           :sessions="ready && day ? sessions : []"
+          :outings="ready && day ? outings : []"
           :views="switcherViews"
           :active-view-id="activeView?.id || ''"
           :clock="!headerClockVisible"

@@ -1054,6 +1054,7 @@
 
   /* Sortides complementàries: una línia sota el resum del dia. */
   .kiosk-outings {
+    flex: 1 0 100%;
     margin: 0;
     border: 1px solid var(--amber-border);
     border-radius: 12px;

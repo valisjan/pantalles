@@ -1,10 +1,13 @@
 <script setup>
+import { outingDetail } from '../../../src/domain/publicDay.js';
 import ToolbarClock from './ToolbarClock.vue';
 
 defineProps({
   // Controls del full de guàrdies; a les altres vistes només hi ha el selector.
   dayControls: { type: Boolean, default: true },
   sessions: { type: Array, default: () => [] },
+  // Sortides complementàries: van a la barra perquè quedin a la vista en baixar per les hores.
+  outings: { type: Array, default: () => [] },
   views: { type: Array, default: () => [] },
   activeViewId: { type: String, default: '' },
   // El rellotge de la barra només surt quan el de la capçalera ja no es veu.
@@ -70,6 +73,13 @@ function counterLabel(session) {
           </button>
         </div>
       </div>
+      <p v-if="outings.length" class="kiosk-outings" role="note">
+        <span class="kiosk-outings-title">Sortides complementàries: </span>
+        <template v-for="(group, index) in outings" :key="group.id">
+          <span v-if="index" class="outing-separator" aria-hidden="true"> · </span>
+          <span class="outing-item" :data-outing-group="group.id"><strong>{{ group.label }}</strong>{{ outingDetail(group) }}</span>
+        </template>
+      </p>
     </template>
   </nav>
 </template>

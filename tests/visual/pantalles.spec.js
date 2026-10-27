@@ -117,6 +117,7 @@ for (const portrait of [false, true]) {
       await page.evaluate((fraction) => window.scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * fraction), fraction);
       await expect(clock).toBeInViewport({ ratio: 1 });
       await expect(page.getByRole('button', { name: 'Dia anterior' })).toBeInViewport({ ratio: 1 });
+      await expect(page.locator('.kiosk-outings')).toBeInViewport({ ratio: 1 });
     }
     await page.clock.setFixedTime(new Date('2026-09-11T18:30:05+02:00'));
     await expect(clock).toHaveText('18:30:05');

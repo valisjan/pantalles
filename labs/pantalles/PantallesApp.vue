@@ -65,7 +65,7 @@ onBeforeUnmount(stop);
 
 <template>
   <div v-if="managementMode" class="management-shell">
-    <AppTopBar :home-href="managementHref" :kiosk-href="kioskUrl" />
+    <AppTopBar :home-href="managementHref" :kiosk-href="kioskUrl" :show-apps="adminReady && adminAllowed" />
     <div class="management-layout">
       <ManagementPanel
         v-model:editing-view-id="editingViewId"

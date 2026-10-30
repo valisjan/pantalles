@@ -12,6 +12,8 @@ const appLinks = [
 defineProps({
   homeHref: { type: String, default: '/?gestio=1' },
   kioskHref: { type: String, default: '/' },
+  // El menú d'aplicacions només surt a l'administració que ha entrat.
+  showApps: { type: Boolean, default: false },
 });
 
 const dark = ref(document.documentElement.classList.contains('dark'));
@@ -46,7 +48,7 @@ onBeforeUnmount(() => {
         <span class="brand-title">Pantalles</span>
       </a>
 
-      <div ref="appsMenu" class="apps-menu">
+      <div v-if="showApps" ref="appsMenu" class="apps-menu">
         <button type="button" class="nav-chip-button" aria-label="Apps" aria-haspopup="true" :aria-expanded="appsOpen" aria-controls="apps-menu-list" @click="appsOpen = !appsOpen">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1.5" /><rect x="14" y="4" width="6" height="6" rx="1.5" /><rect x="4" y="14" width="6" height="6" rx="1.5" /><rect x="14" y="14" width="6" height="6" rx="1.5" /></svg>
           <span class="nav-chip-label">Apps</span>

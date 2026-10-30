@@ -329,7 +329,9 @@ test('la gestió mostra la barra comuna i la vista prèvia de la vista que s\'ed
 
   await expect(page.locator('.app-nav .brand-title')).toHaveText('Pantalles');
   await page.getByRole('button', { name: 'Apps' }).click();
-  await expect(page.locator('.apps-popover')).toContainText('Guàrdies');
+  const apps = page.locator('.centre-apps-popover');
+  await expect(apps.locator('[data-app]')).toHaveText([/Quota/, /Guàrdies/, /Pantalles/, /Retards/]);
+  await expect(apps.locator('[data-app="pantalles"]')).toHaveAttribute('aria-current', 'page');
   const preview = page.frameLocator('.management-preview iframe');
   await expect(preview.locator('.day-content')).toContainText('Maria Sureda');
   // El text es veu a la vista prèvia mentre s'escriu, abans i tot de desar-lo.

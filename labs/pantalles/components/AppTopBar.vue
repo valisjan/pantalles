@@ -1,13 +1,8 @@
 <script setup>
-import { onBeforeUnmount, ref } from 'vue';
+import { ref } from 'vue';
+import AppsMenu from '../../../src/shared/AppsMenu.vue';
 
-// Mateixa barra que Guàrdies: logo, menú d'aplicacions i tema.
-const netlifyMode = window.location.hostname.endsWith('.netlify.app');
-const appLinks = [
-  { name: 'Quota', description: 'Assignació de classes', href: netlifyMode ? 'https://chic-tartufo-68ee9c.netlify.app/' : 'https://quota.iessureda.com/' },
-  { name: 'Guàrdies', description: 'Full de guàrdies del dia', href: netlifyMode ? 'https://guardies.netlify.app/' : 'https://guardies.iessureda.com/' },
-  { name: 'Retards', description: "Retards de l'alumnat", href: netlifyMode ? 'https://spontaneous-gecko-a2703a.netlify.app/' : 'https://retards.iessureda.com/' },
-];
+// Mateixa barra que Guàrdies: logo, menú d'aplicacions comú i tema.
 
 defineProps({
   homeHref: { type: String, default: '/?gestio=1' },
@@ -24,20 +19,6 @@ function toggleTheme() {
   localStorage.setItem('darkMode', dark.value ? 'true' : 'false');
 }
 
-const appsOpen = ref(false);
-const appsMenu = ref(null);
-function closeAppsOnOutside(event) {
-  if (appsMenu.value && !appsMenu.value.contains(event.target)) appsOpen.value = false;
-}
-function closeAppsOnEscape(event) {
-  if (event.key === 'Escape') appsOpen.value = false;
-}
-document.addEventListener('click', closeAppsOnOutside);
-document.addEventListener('keydown', closeAppsOnEscape);
-onBeforeUnmount(() => {
-  document.removeEventListener('click', closeAppsOnOutside);
-  document.removeEventListener('keydown', closeAppsOnEscape);
-});
 </script>
 
 <template>
@@ -48,18 +29,8 @@ onBeforeUnmount(() => {
         <span class="brand-title">Pantalles</span>
       </a>
 
-      <div v-if="showApps" ref="appsMenu" class="apps-menu">
-        <button type="button" class="nav-chip-button" aria-label="Apps" aria-haspopup="true" :aria-expanded="appsOpen" aria-controls="apps-menu-list" @click="appsOpen = !appsOpen">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1.5" /><rect x="14" y="4" width="6" height="6" rx="1.5" /><rect x="4" y="14" width="6" height="6" rx="1.5" /><rect x="14" y="14" width="6" height="6" rx="1.5" /></svg>
-          <span class="nav-chip-label">Apps</span>
-        </button>
-        <div v-if="appsOpen" id="apps-menu-list" class="apps-popover">
-          <a v-for="app in appLinks" :key="app.name" :href="app.href" class="apps-link">
-            <strong>{{ app.name }}</strong>
-            <small>{{ app.description }}</small>
-          </a>
-        </div>
-      </div>
+      <!-- A la gestió només hi entra l'administració. -->
+      <AppsMenu current="pantalles" :signed-in="showApps" is-admin can-retards />
 
       <div class="nav-center"></div>
 

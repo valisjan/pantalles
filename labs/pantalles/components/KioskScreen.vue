@@ -142,6 +142,8 @@ watch(() => props.configRevision, () => {
 const { day, loading: dayLoading, error: dayError } = usePublicDay(selectedCourse, selectedDate);
 const hours = computed(() => (Array.isArray(day.value?.hours) ? day.value.hours : []));
 const outings = computed(() => (Array.isArray(day.value?.groupsOut) ? day.value.groupsOut : []));
+// Avís general del dia que publica Guàrdies: es veu a totes les vistes.
+const dayNotice = computed(() => String(day.value?.notice || '').trim());
 const summary = computed(() => daySummary(day.value));
 // Sense cap guàrdia pendent, el resum ho diu amb paraules en lloc d'un zero.
 const openLabel = computed(() => {
@@ -263,6 +265,7 @@ onBeforeUnmount(() => {
           :day-controls="viewType === 'guardies'"
           :sessions="ready && day ? sessions : []"
           :outings="ready && day ? outings : []"
+          :notice="viewType === 'guardies' && ready ? dayNotice : ''"
           :views="switcherViews"
           :active-view-id="activeView?.id || ''"
           :clock="!headerClockVisible"
@@ -273,6 +276,11 @@ onBeforeUnmount(() => {
         />
 
         <p v-if="config.message" class="kiosk-banner screen-message">{{ config.message }}</p>
+        <!-- Al full de guàrdies l'avís va a la barra fixa; a les altres vistes, aquí. -->
+        <p v-if="viewType !== 'guardies' && ready && dayNotice" class="kiosk-day-notice is-banner" role="note">
+          <span class="kiosk-day-notice-title">Avís del dia</span>
+          <span class="kiosk-day-notice-text">{{ dayNotice }}</span>
+        </p>
 
         <Transition name="view" mode="out-in" @after-enter="centerCurrentHour">
         <NoticeView v-if="viewType === 'text' && activeView" :key="`notice-${activeView.id}`" :view="activeView" />

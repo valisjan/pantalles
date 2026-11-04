@@ -28,6 +28,8 @@
     --green-soft: #e1f3ec;
     --green-border: #a9dcc9;
     --green-dot: #128764;
+    --green-solid: #0e7a5a;
+    --on-green: #ffffff;
     --coral: #a8432c;
     --coral-soft: #fdece7;
     --coral-border: #efb9aa;
@@ -35,6 +37,12 @@
     --amber-soft: #fff0dd;
     --amber-border: #f3c98f;
     --amber-dot: #e07b00;
+    /* Vermell d'estat: hores i files on algú ha de substituir. */
+    --red: #b42318;
+    --red-soft: #fdeceb;
+    --red-border: #f4b8b2;
+    --red-dot: #d92d20;
+    --on-red: #ffffff;
     --teal: #0b6b78;
     --teal-soft: #dff2f4;
     --shadow: 0 1px 2px rgb(20 24 32 / 0.04), 0 4px 14px rgb(20 24 32 / 0.05);
@@ -73,6 +81,8 @@
     --green-soft: #16322a;
     --green-border: #2a5a4b;
     --green-dot: #5cd3ae;
+    --green-solid: #5cd3ae;
+    --on-green: #06231a;
     --coral: #ffac96;
     --coral-soft: #3a1f19;
     --coral-border: #6e3a2e;
@@ -80,6 +90,11 @@
     --amber-soft: #3a2915;
     --amber-border: #6b4a22;
     --amber-dot: #ff9f3d;
+    --red: #ff9d94;
+    --red-soft: #3b1a1a;
+    --red-border: #713030;
+    --red-dot: #f0544a;
+    --on-red: #1d0b0a;
     --teal: #74d4df;
     --teal-soft: #12302f;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 18px rgb(0 0 0 / 0.22);
@@ -350,9 +365,9 @@
   }
 
   .kiosk-kpi.is-open {
-    border-color: var(--amber-border);
-    background: var(--amber-soft);
-    color: var(--amber);
+    border-color: var(--red-border);
+    background: var(--red-soft);
+    color: var(--red);
   }
 
   .kiosk-kpi.is-covered {
@@ -495,9 +510,10 @@
     border-radius: 3px;
   }
 
-  .session-legend .legend-clear::before { border-color: var(--green-border); background: var(--green-soft); }
-  .session-legend .legend-busy::before { border-color: var(--border-strong); background: var(--surface-strong); }
-  .session-legend .legend-pending::before { border-color: var(--amber-border); background: var(--amber-soft); }
+  .session-legend .legend-clear::before { border-color: var(--green-dot); background: var(--green-soft); }
+  .session-legend .legend-busy::before { border-color: var(--red-dot); background: var(--red-soft); }
+  .session-legend .legend-clear { color: var(--green); }
+  .session-legend .legend-busy { color: var(--red); }
 
   /* Cada botó és una hora: l'hora mana i el nombre de guàrdies és una xapa. */
   .session-counter {
@@ -543,26 +559,32 @@
     font-weight: 800;
   }
 
+  /* Verd: res a substituir (encara que hi hagi absències). Vermell: cal substituir.
+     Si n'hi ha alguna sense ningú assignat, la vora es fa més gruixuda. */
   .session-counter.clear {
+    border-color: var(--green-border);
     background: var(--green-soft);
     color: var(--green);
   }
 
-  .session-counter.busy { background: var(--surface-strong); }
-
-  .session-counter.pending {
-    border-color: var(--amber-border);
-    background: var(--amber-soft);
-    color: var(--amber);
+  .session-counter.busy {
+    border-color: var(--red-border);
+    background: var(--red-soft);
+    color: var(--red);
   }
 
-  .session-counter.pending .counter-count {
-    background: var(--amber-dot);
-    color: #15171c;
+  .session-counter.busy .counter-count {
+    background: var(--red-dot);
+    color: var(--on-red);
+  }
+
+  .session-counter.pending {
+    border-color: var(--red-dot);
+    box-shadow: inset 0 0 0 1px var(--red-dot);
   }
 
   .session-counter.clear .counter-time,
-  .session-counter.pending .counter-time { color: inherit; }
+  .session-counter.busy .counter-time { color: inherit; }
 
   .session-counter.past:not(.current) { opacity: 0.5; }
 
@@ -825,13 +847,13 @@
     font-weight: 700;
   }
 
-  /* Com al full de guàrdies: les que encara no té ningú, en ambre. */
+  /* Com al full de guàrdies: les que encara no té ningú, en vermell ple. */
   .session-pending {
-    border: 1px solid var(--amber-border);
+    border: 1px solid var(--red-dot);
     border-radius: 999px;
-    background: var(--amber-soft);
+    background: var(--red-dot);
     padding: 4px 12px;
-    color: var(--amber);
+    color: var(--on-red);
     font-size: var(--text-sm);
     font-style: normal;
     font-weight: 800;
@@ -924,6 +946,58 @@
   .hour-card.past:not(.current-session) .hour-card-head h2,
   .hour-card.past:not(.current-session) .hour-badge { color: var(--muted); }
 
+  /* Color de cada hora, com a la barra: vermell si algú ha de substituir (sense
+     ningú o ja assignat), verd si no cal, encara que hi hagi absències. La
+     insígnia ("1a") ho diu de lluny i la capçalera ho acompanya. L'hora en curs
+     conserva la vora índigo; les acabades, la capçalera grisa. */
+  .hour-card.needs-cover { border-color: var(--red-border); }
+  .hour-card.no-cover { border-color: var(--green-border); }
+
+  .hour-card.needs-cover .hour-card-head {
+    border-bottom-color: var(--red-border);
+    background: var(--red-soft);
+  }
+
+  .hour-card.no-cover .hour-card-head {
+    border-bottom-color: var(--green-border);
+    background: var(--green-soft);
+  }
+
+  .hour-card.needs-cover .hour-badge {
+    background: var(--red-dot);
+    color: var(--on-red);
+  }
+
+  .hour-card.no-cover .hour-badge {
+    background: var(--green-solid);
+    color: var(--on-green);
+  }
+
+  .hour-card.needs-cover .session-meta { color: var(--red); }
+  .hour-card.no-cover .session-meta { color: var(--green); }
+
+  .hour-card.current-session.needs-cover,
+  .hour-card.current-session.no-cover { border-color: var(--primary); }
+
+  .hour-card.past.needs-cover:not(.current-session) .hour-badge {
+    background: var(--red-soft);
+    color: var(--red);
+  }
+
+  .hour-card.past.no-cover:not(.current-session) .hour-badge {
+    background: var(--green-soft);
+    color: var(--green);
+  }
+
+  /* Hora sense absències: continua discreta, però en verd. */
+  .hour-card.no-cover.empty:not(.current-session) .hour-badge {
+    border-color: var(--green-dot);
+    background: transparent;
+    color: var(--green);
+  }
+
+  .hour-card.no-cover.empty:not(.current-session) .hour-card-head h2 { color: var(--green); }
+
   .guard-row {
     position: relative;
     display: grid;
@@ -983,24 +1057,26 @@
     padding-bottom: 16px;
   }
 
-  .status-covered::before { background: var(--green-dot); }
-  .status-covered .status-label { color: var(--green); }
-  .status-open { background: color-mix(in srgb, var(--amber-soft) 55%, transparent); }
-  .status-open::before { background: var(--amber-dot); }
+  /* La barra lateral diu el mateix que el color de l'hora: vermella si algú ha
+     de substituir (sense ningú, amb fons vermell, o ja assignat) i verda si no
+     cal (codocència, torna al seu grup o absència en una guàrdia). L'etiqueta
+     diu qui se'n fa càrrec: «Guàrdia» o «Alliberat/ada» en índigo, «Queden amb»
+     en verd. Una guàrdia no realitzada ja no demana ningú: gris i ratllada. */
+  .status-open::before,
+  .status-covered::before { background: var(--red-dot); }
+  .status-covered .status-label { color: var(--primary); }
+  .status-open { background: color-mix(in srgb, var(--red-soft) 70%, transparent); }
   .status-open .status-label,
-  .status-open .assigned-person strong { color: var(--amber); }
-  /* Qui cobreix: guàrdia (índigo), queden amb el docent de codocència (blau
-     verdós) i alliberat per una sortida (verd, com qualsevol altra cobertura). */
-  .status-covered.role-guard::before { background: var(--primary); }
-  .status-covered.role-guard .status-label { color: var(--primary); }
+  .status-open .assigned-person strong { color: var(--red); }
   .status-coteacher::before,
-  .status-returns::before { background: var(--teal); }
+  .status-returns::before,
+  .status-info::before { background: var(--green-dot); }
   .status-coteacher .status-label,
-  .status-returns .status-label { color: var(--teal); }
+  .status-returns .status-label { color: var(--green); }
   .status-returns .assigned-person strong,
   .status-info .assigned-person strong { color: var(--muted); }
-  .status-not-done::before { background: var(--coral); }
-  .status-not-done .status-label { color: var(--coral); }
+  .status-not-done::before { background: var(--border-strong); }
+  .status-not-done .status-label { color: var(--muted); }
   .status-not-done .assigned-person strong {
     color: var(--muted);
     text-decoration: line-through;
@@ -1051,6 +1127,36 @@
     background: var(--surface-subtle);
     padding: 10px 12px;
   }
+
+  /* Avís general del dia (cap d'estudis): a la barra fixa, en índigo i ben gran
+     perquè es llegeixi de lluny. A les altres vistes, sota la capçalera. */
+  .kiosk-day-notice {
+    display: flex;
+    flex: 1 0 100%;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 14px;
+    margin: 0;
+    border: 1px solid var(--primary-border);
+    border-left: 6px solid var(--primary);
+    border-radius: 12px;
+    background: var(--primary-soft);
+    color: var(--text);
+    padding: 12px 18px;
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .kiosk-day-notice-title {
+    color: var(--primary);
+    font-size: var(--text-sm);
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .kiosk-day-notice-text { white-space: pre-line; }
 
   /* Sortides complementàries: una línia sota el resum del dia. */
   .kiosk-outings {

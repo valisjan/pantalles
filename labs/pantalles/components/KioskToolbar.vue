@@ -8,6 +8,8 @@ defineProps({
   sessions: { type: Array, default: () => [] },
   // Sortides complementàries: van a la barra perquè quedin a la vista en baixar per les hores.
   outings: { type: Array, default: () => [] },
+  // Avís general del dia (cap d'estudis): a la barra, perquè no marxi en baixar.
+  notice: { type: String, default: '' },
   views: { type: Array, default: () => [] },
   activeViewId: { type: String, default: '' },
   // El rellotge de la barra només surt quan el de la capçalera ja no es veu.
@@ -16,7 +18,8 @@ defineProps({
 const emit = defineEmits(['jump', 'shift-day', 'select-view']);
 
 function counterLabel(session) {
-  return `${session.label}: ${session.guards} ${session.guards === 1 ? 'guàrdia' : 'guàrdies'}${session.open ? `, ${session.open} sense cobrir` : ''}`;
+  if (!session.guards) return `${session.label}: res a substituir`;
+  return `${session.label}: ${session.guards} ${session.guards === 1 ? 'substitució' : 'substitucions'}${session.open ? `, ${session.open} sense cobrir` : ''}`;
 }
 </script>
 
@@ -36,11 +39,11 @@ function counterLabel(session) {
 
     <template v-if="dayControls">
       <div v-if="sessions.length" class="session-counters" aria-label="Guàrdies per hora">
-        <!-- Què vol dir el color de cada hora: la llegenda substitueix el títol. -->
+        <!-- Què vol dir el color de cada hora: la llegenda substitueix el títol.
+             Verd si no cal substituir ningú (encara que hi hagi absències), vermell si sí. -->
         <span class="session-legend" aria-hidden="true">
-          <span class="legend-clear">sense guàrdies</span>
-          <span class="legend-busy">cobertes</span>
-          <span class="legend-pending">en falten</span>
+          <span class="legend-clear">res a substituir</span>
+          <span class="legend-busy">cal substituir</span>
         </span>
         <button
           v-for="session in sessions"
@@ -73,6 +76,10 @@ function counterLabel(session) {
           </button>
         </div>
       </div>
+      <p v-if="notice" class="kiosk-day-notice" role="note">
+        <span class="kiosk-day-notice-title">Avís del dia</span>
+        <span class="kiosk-day-notice-text">{{ notice }}</span>
+      </p>
       <p v-if="outings.length" class="kiosk-outings" role="note">
         <span class="kiosk-outings-title">Sortides complementàries: </span>
         <template v-for="(group, index) in outings" :key="group.id">

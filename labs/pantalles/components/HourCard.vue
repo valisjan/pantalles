@@ -2,6 +2,8 @@
 import { computed } from 'vue';
 import { hourProgress, hourRange } from '../../../src/domain/calendar.js';
 import {
+  hourCountLabel,
+  hourCoverState,
   isPatioHour,
   rowCoverLabel,
   rowCoverText,
@@ -36,10 +38,8 @@ const rows = computed(() => (props.hour.rows || []).map((row) => {
   };
 }));
 const zones = computed(() => props.hour.patio?.zones || []);
-const count = computed(() => {
-  const total = rows.value.length;
-  return total ? `${total} ${total === 1 ? 'absència' : 'absències'}` : 'Sense absències';
-});
+const count = computed(() => hourCountLabel(props.hour));
+const coverState = computed(() => hourCoverState(props.hour));
 const open = computed(() => rows.value.filter((row) => row.status === 'open').length);
 </script>
 
@@ -48,7 +48,7 @@ const open = computed(() => rows.value.filter((row) => row.status === 'open').le
     class="hour-card"
     :data-hour-key="hour.key"
     :style="{ '--i': index }"
-    :class="{ 'patio-card': patio, 'current-session': current, past, empty: !patio && !rows.length && !hour.observation }"
+    :class="[coverState, { 'patio-card': patio, 'current-session': current, past, empty: !patio && !rows.length && !hour.observation }]"
   >
     <header class="hour-card-head">
       <div class="hour-title">

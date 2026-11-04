@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   outingDetail,
   daySummary,
+  hourCountLabel,
+  hourCoverState,
   hourSummary,
   rowCoverLabel,
   rowCoverText,
@@ -44,6 +46,21 @@ test('només compta com a guàrdia el que algú ha de cobrir', () => {
   assert.deepEqual(daySummary(null), { absences: 0, guards: 0, open: 0, outings: 0 });
   assert.equal(shortHourLabel({ label: '4a hora · 11:15' }, 3), '4a');
   assert.equal(shortHourLabel({ key: 'PATI' }, 3), 'Pati');
+});
+
+test('una hora és vermella si algú ha de substituir i verda si no cal, encara que hi hagi absències', () => {
+  const hour = (...list) => ({ key: '8:00', rows: list });
+  // Sense ningú assignat o ja coberta: cal substituir.
+  assert.equal(hourCoverState(hour(rows.open)), 'needs-cover');
+  assert.equal(hourCoverState(hour(rows.covered, rows.coteacher)), 'needs-cover');
+  // Absències que no demanen substitució: codocència, torna al seu grup, no realitzada i en una guàrdia.
+  assert.equal(hourCoverState(hour(rows.coteacher, rows.returns, rows.notDone, rows.info)), 'no-cover');
+  assert.equal(hourCoverState(hour()), 'no-cover');
+  assert.equal(hourCoverState({ key: 'PATI', kind: 'patio', rows: [rows.open] }), '');
+  assert.equal(hourCountLabel(hour()), 'Sense absències');
+  assert.equal(hourCountLabel(hour(rows.coteacher, rows.returns)), '2 absències · cap substitució');
+  assert.equal(hourCountLabel(hour(rows.open)), '1 absència · 1 substitució');
+  assert.equal(hourCountLabel(hour(...Object.values(rows))), '6 absències · 2 substitucions');
 });
 
 test('converteix enllaços de Drive i Canva en adreces inseribles', () => {

@@ -1,6 +1,16 @@
-export const PANTALLES_VERSION = '1.8.0';
+export const PANTALLES_VERSION = '1.9.0';
 
 export const PANTALLES_RELEASES = [
+  {
+    version: '1.9.0',
+    date: '4 de novembre de 2026',
+    changes: [
+      'El color de cada hora diu si cal substituir algú: vermell si n’hi ha alguna per cobrir (encara sense ningú o ja assignada) i verd si no cal, encara que hi hagi absències (codocència, el grup torna amb el seu docent, absència en una guàrdia o guàrdia no realitzada). Ho diuen igual la barra, la insígnia i la capçalera de cada hora.',
+      'Cada hora indica quantes absències i quantes substitucions té: «3 absències · 1 substitució» o «2 absències · cap substitució».',
+      'Les guàrdies que encara no té ningú surten en vermell ple, i la franja de cada fila segueix el mateix criteri: vermella si algú substitueix, verda si no cal.',
+      'L’avís general del dia que posa la cap d’estudis a Guàrdies surt a la barra fixa del full (no marxa en baixar per les hores) i, a les altres vistes, sota la capçalera.',
+    ],
+  },
   {
     version: '1.8.0',
     date: '25 d’octubre de 2026',

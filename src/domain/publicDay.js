@@ -68,6 +68,22 @@ export function hourSummary(hour) {
   };
 }
 
+// Color de cada hora: vermell si algú ha de substituir (encara sense ningú o ja
+// assignat), verd si no cal. Una hora amb absències pot ser verda: codocència,
+// grup que torna amb el seu docent, absència en una guàrdia o guàrdia no realitzada.
+export function hourCoverState(hour) {
+  if (isPatioHour(hour)) return '';
+  return hourSummary(hour).guards ? 'needs-cover' : 'no-cover';
+}
+
+// «2 absències · 1 substitució», «3 absències · cap substitució» o «Sense absències».
+export function hourCountLabel(hour) {
+  const { absences, guards } = hourSummary(hour);
+  if (!absences) return 'Sense absències';
+  const substitutions = guards ? `${guards} ${guards === 1 ? 'substitució' : 'substitucions'}` : 'cap substitució';
+  return `${absences} ${absences === 1 ? 'absència' : 'absències'} · ${substitutions}`;
+}
+
 export function daySummary(day) {
   const hours = Array.isArray(day?.hours) ? day.hours : [];
   return hours.reduce((total, hour) => {

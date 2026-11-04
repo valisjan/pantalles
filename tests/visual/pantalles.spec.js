@@ -142,8 +142,8 @@ test('pantalla de sala mostra la jornada publicada en vertical', async ({ page }
   await expect(page.getByText(/grups? fora/)).toHaveCount(0);
   await expect(page.getByText('Claustre a les 14.00 h')).toBeVisible();
   await expect(page.locator('.live-clock')).toContainText(/\d{2}:\d{2}:\d{2}/);
-  await expect(page.getByRole('button', { name: '1a: 1 guàrdia' })).toHaveClass(/busy/);
-  await expect(page.getByRole('button', { name: '2a: 0 guàrdies' })).toHaveClass(/clear/);
+  await expect(page.getByRole('button', { name: '1a: 1 substitució' })).toHaveClass(/busy/);
+  await expect(page.getByRole('button', { name: '2a: res a substituir' })).toHaveClass(/clear/);
 
   // Pantalla tàctil: ni botó «Avui» ni controls de mida del text a la barra.
   const toolbar = page.locator('.kiosk-toolbar');
@@ -166,7 +166,7 @@ test('la pantalla destaca i actualitza la sessió actual', async ({ page }) => {
   // L'hora acabada es continua llegint: només la capçalera indica que ja ha passat.
   const past = page.locator('.hour-card.past[data-hour-key="8:00"]');
   await expect(past).toHaveCSS('opacity', '0.9');
-  await expect(page.locator('.session-legend')).toHaveText(/sense guàrdies\s*cobertes\s*en falten/);
+  await expect(page.locator('.session-legend')).toHaveText(/res a substituir\s*cal substituir/);
 });
 
 test('la pantalla identifica el cap de setmana com a dia no lectiu', async ({ page }) => {
@@ -281,9 +281,49 @@ test('cada cobertura mostra el mateix estat que el full de guàrdies', async ({ 
   await expect(rows.filter({ hasText: 'Docent F' })).toContainText('No realitzada');
 
   // Només la A, la B i la G demanen algú que faci la guàrdia; la A encara no té ningú.
-  await expect(page.getByRole('button', { name: '4a: 3 guàrdies, 1 sense cobrir' })).toHaveClass(/pending/);
-  await expect(page.getByRole('button', { name: '4a: 3 guàrdies, 1 sense cobrir' }).locator('.counter-count')).toHaveText('3');
+  const counter = page.getByRole('button', { name: '4a: 3 substitucions, 1 sense cobrir' });
+  await expect(counter).toHaveClass(/busy/);
+  await expect(counter).toHaveClass(/pending/);
+  await expect(counter.locator('.counter-count')).toHaveText('3');
   await expect(page.locator('.kiosk-kpi.is-open')).toContainText('1guàrdia sense cobrir');
+  // Hi ha algú a substituir: l'hora és vermella i ho explica.
+  const card = page.locator('.hour-card[data-hour-key="11:15"]');
+  await expect(card).toHaveClass(/needs-cover/);
+  await expect(card.locator('.session-meta')).toContainText('7 absències · 3 substitucions');
+});
+
+test('una hora amb absències però res a substituir és verda', async ({ page }) => {
+  const row = (id, fields) => ({
+    id, absent: `Docent ${id}`, group: '1ESO-F', subject: 'MAT-F-1E', room: 'Aula 6',
+    assigned: '', coTeacher: false, cancelled: false, comment: '', ...fields,
+  });
+  await seedScreen(page, {
+    ...publicDay,
+    hours: [
+      {
+        key: '8:00', kind: 'guardies', label: '1a hora · 8:00',
+        rows: [
+          row('C', { assigned: 'Joana Mas', coTeacher: true }),
+          row('D', { group: '1ESO-E + 1ESO-F', subject: 'MAT-EF-1E', returnsToGroup: true }),
+          row('E', { group: 'Guàrdia', subject: 'Guàrdia', room: '' }),
+          row('F', { assigned: 'Llucia Pons', cancelled: true }),
+        ],
+      },
+      { key: '8:55', kind: 'guardies', label: '2a hora · 8:55', rows: [] },
+      { key: '9:50', kind: 'guardies', label: '3a hora · 9:50', rows: [row('B', { assigned: 'Pere Blanes', source: 'guard' })] },
+    ],
+  });
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+
+  const first = page.locator('.hour-card[data-hour-key="8:00"]');
+  await expect(first).toHaveClass(/no-cover/);
+  await expect(first.locator('.session-meta')).toContainText('4 absències · cap substitució');
+  await expect(page.getByRole('button', { name: '1a: res a substituir' })).toHaveClass(/clear/);
+  // Sense absències també és verda; amb una guàrdia coberta, vermella.
+  await expect(page.locator('.hour-card[data-hour-key="8:55"]')).toHaveClass(/no-cover/);
+  await expect(page.locator('.hour-card[data-hour-key="9:50"]')).toHaveClass(/needs-cover/);
+  await expect(page.getByRole('button', { name: '3a: 1 substitució' })).toHaveClass(/busy/);
+  await expect(page.getByRole('button', { name: '3a: 1 substitució' })).not.toHaveClass(/pending/);
 });
 
 test('el quiosc passa sol al dia següent a mitjanit', async ({ page }) => {
@@ -664,4 +704,31 @@ test('es recarrega cada dia a les 6.30', async ({ page }) => {
   const reloaded = page.waitForEvent('load');
   await page.clock.runFor(61_000);
   await reloaded;
+});
+
+test('l’avís general del dia es veu a la barra fixa i també a les altres vistes', async ({ page }) => {
+  await seedScreen(page, {
+    ...publicDay,
+    notice: 'Claustre a les 14:00 a la biblioteca',
+    hours: Array.from({ length: 6 }, (_, index) => ({
+      ...publicDay.hours[0], key: `${8 + index}:00`, label: `${index + 1}a hora`,
+      rows: Array.from({ length: 3 }, (_, row) => ({ ...publicDay.hours[0].rows[0], id: `${index}-${row}` })),
+    })),
+  });
+  await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
+  const notice = page.locator('.kiosk-toolbar .kiosk-day-notice');
+  await expect(notice).toContainText('Avís del dia');
+  await expect(notice).toContainText('Claustre a les 14:00 a la biblioteca');
+  // En baixar pel full, continua a la vista amb la barra.
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect(notice).toBeInViewport();
+  // Sense avís no hi surt res.
+  await page.evaluate(() => {
+    const key = 'quota-e2e-guardies:e2e-2026';
+    const data = JSON.parse(localStorage.getItem(key));
+    delete data.publicDays['2026-09-11'].notice;
+    localStorage.setItem(key, JSON.stringify(data));
+    window.dispatchEvent(new StorageEvent('storage', { key }));
+  });
+  await expect(page.locator('.kiosk-day-notice')).toHaveCount(0);
 });

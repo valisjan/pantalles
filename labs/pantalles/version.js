@@ -1,6 +1,15 @@
-export const PANTALLES_VERSION = '1.9.0';
+export const PANTALLES_VERSION = '1.9.1';
 
 export const PANTALLES_RELEASES = [
+  {
+    version: '1.9.1',
+    date: '4 de novembre de 2026',
+    changes: [
+      'Fora el resum de dalt (sense cobrir, guàrdies i absències): la barra de les hores ja ho diu per a cada hora.',
+      'A la tarda, quan es mostra el full de demà, ja no surt cap franja d’avís: ho diuen l’etiqueta del rellotge («Full de demà») i la data de la capçalera. Sota la capçalera només hi ha franges quan algú ha escrit un missatge.',
+      'Cada absència és una targeta separada: es distingeix bé on acaba un docent i on comença el següent, i l’observació queda dins de la targeta del seu docent.',
+    ],
+  },
   {
     version: '1.9.0',
     date: '4 de novembre de 2026',

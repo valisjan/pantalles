@@ -285,7 +285,6 @@ test('cada cobertura mostra el mateix estat que el full de guàrdies', async ({ 
   await expect(counter).toHaveClass(/busy/);
   await expect(counter).toHaveClass(/pending/);
   await expect(counter.locator('.counter-count')).toHaveText('3');
-  await expect(page.locator('.kiosk-kpi.is-open')).toContainText('1guàrdia sense cobrir');
   // Hi ha algú a substituir: l'hora és vermella i ho explica.
   const card = page.locator('.hour-card[data-hour-key="11:15"]');
   await expect(card).toHaveClass(/needs-cover/);
@@ -331,11 +330,12 @@ test('el quiosc passa sol al dia següent a mitjanit', async ({ page }) => {
   await seedScreen(page);
   await page.goto('/?pantalla=sala-professorat');
 
-  // A la nit ja es veu el full de demà, amb l'avís; a mitjanit passa a ser el d'avui.
-  await expect(page.locator('.kiosk-banner.next-day')).toContainText('de demà');
+  // A la nit ja es veu el full de demà (ho diu l'etiqueta del rellotge, sense cap franja d'avís); a mitjanit passa a ser el d'avui.
+  await expect(page.locator('.live-clock-session')).toHaveText('Full de demà');
+  await expect(page.getByText('Avui ja no hi ha classes')).toHaveCount(0);
   await expect(page.getByText('Maria Sureda')).toBeVisible();
   await page.clock.runFor(60_000);
-  await expect(page.locator('.kiosk-banner.next-day')).toHaveCount(0);
+  await expect(page.locator('.live-clock-session')).toHaveText('Fora de l’horari lectiu');
   await expect(page.getByText('Maria Sureda')).toBeVisible();
 });
 
@@ -346,7 +346,8 @@ test('a la tarda mostra el full de demà si ja està publicat, i si no, el d’a
   await expect(page.getByText("No s'ha publicat el full de guàrdies d'aquest dia")).toBeVisible();
 
   await page.clock.runFor(60_000);
-  await expect(page.locator('.kiosk-banner.next-day')).toHaveText('Avui ja no hi ha classes: es mostra el full de demà');
+  await expect(page.locator('.live-clock-session')).toHaveText('Full de demà');
+  await expect(page.getByText('Avui ja no hi ha classes')).toHaveCount(0);
   await expect(page.getByText('Maria Sureda')).toBeVisible();
   await expect(page.locator('.kiosk-date')).toContainText('11 de setembre');
   // La fletxa enrere torna al full d'avui.
@@ -359,7 +360,7 @@ test('si el full de demà encara no és publicat, a la tarda es continua veient 
   await seedScreen(page);
   await page.goto('/?pantalla=sala-professorat');
   await expect(page.getByText('Maria Sureda')).toBeVisible();
-  await expect(page.locator('.kiosk-banner.next-day')).toHaveCount(0);
+  await expect(page.locator('.live-clock-session')).not.toHaveText('Full de demà');
   await expect(page.locator('.kiosk-date')).toContainText('11 de setembre');
 });
 
@@ -463,14 +464,15 @@ test('cada hora té la franja com a títol i al pati destaca qui hi ha', async (
   await expect(page.locator('.patio-zone').first().locator('.zone-teacher')).toHaveText('Gabriel Calvo');
 });
 
-test('quan no queda cap guàrdia sense cobrir, el resum ho diu', async ({ page }) => {
-  await seedScreen(page);
+test('sense avís de la cap d’estudis, entre la capçalera i la barra no hi ha cap franja', async ({ page }) => {
+  await seedScreen(page, { ...publicDay });
+  await page.addInitScript(() => {
+    const key = 'quota-e2e-pantalla:sala-professorat';
+    localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key)), message: '' }));
+  });
   await page.goto('/?pantalla=sala-professorat&data=2026-09-11');
-
-  const kpi = page.locator('.kiosk-kpi').first();
-  await expect(kpi).toHaveClass(/is-covered/);
-  await expect(kpi).toHaveText('totes cobertes');
-  await expect(kpi.locator('.kpi-check')).toBeVisible();
+  await expect(page.locator('.hour-card').first()).toBeVisible();
+  await expect(page.locator('.kiosk-summary, .kiosk-kpi, .kiosk-banner, .kiosk-day-notice')).toHaveCount(0);
 });
 
 test('un dia sense full fa de rellotge i el peu queda a baix', async ({ page }) => {
@@ -580,9 +582,9 @@ test('en una pantalla vertical les hores surten a dalt, com a la vista prèvia d
 
   // Amb poques guàrdies (no cal desplaçar-se), la barra no baixa a mitja pantalla.
   const toolbar = await page.locator('.kiosk-toolbar').boundingBox();
-  const summary = await page.locator('.kiosk-summary').boundingBox();
+  const header = await page.locator('.kiosk-header').boundingBox();
   const firstHour = await page.locator('.day-content > .hour-card').first().boundingBox();
-  expect(toolbar.y).toBeGreaterThan(summary.y + summary.height - 1);
+  expect(toolbar.y).toBeGreaterThan(header.y + header.height - 1);
   expect(toolbar.y + toolbar.height).toBeLessThan(firstHour.y + 1);
 
   // I es queda a dalt mentre es baixa pel full.

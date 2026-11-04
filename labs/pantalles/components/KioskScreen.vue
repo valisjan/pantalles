@@ -10,7 +10,7 @@ import {
   localDateString,
   shiftIsoDate,
 } from '../../../src/domain/calendar.js';
-import { daySummary, hourSummary, isPatioHour, shortHourLabel } from '../../../src/domain/publicDay.js';
+import { hourSummary, isPatioHour, shortHourLabel } from '../../../src/domain/publicDay.js';
 import { playlistFor } from '../../../src/domain/schedule.js';
 import { DEFAULT_SCREEN_CONFIG } from '../../../src/services/pantallesStorage.js';
 import { useClock } from '../composables/useClock.js';
@@ -83,9 +83,14 @@ const viewingToday = computed(() => selectedDate.value === today.value);
 // Només s'avisa quan algú ha canviat de dia a la pantalla, no amb una data fixada a l'adreça.
 const browsingOtherDay = computed(() => Boolean(localDate.value) && !viewingToday.value);
 const showingNextDay = computed(() => !localDate.value && Boolean(nextDayDate.value) && selectedDate.value === nextDayDate.value);
-const nextDayLabel = computed(() => (nextDayDate.value === shiftIsoDate(today.value, 1)
-  ? 'de demà'
-  : `del ${formatLongDate(nextDayDate.value).toLowerCase()}`));
+// Sense franja d'avís: la capçalera ja diu la data del full i l'etiqueta del rellotge,
+// que és el de demà (o el del dia lectiu següent).
+const weekdayFormatter = new Intl.DateTimeFormat('ca-ES', { weekday: 'long' });
+const nextDayBadge = computed(() => {
+  if (!showingNextDay.value) return '';
+  if (nextDayDate.value === shiftIsoDate(today.value, 1)) return 'Full de demà';
+  return `Full de ${weekdayFormatter.format(new Date(`${nextDayDate.value}T12:00:00`))}`;
+});
 
 function shiftDay(amount) {
   localDate.value = shiftIsoDate(selectedDate.value, amount);
@@ -144,13 +149,6 @@ const hours = computed(() => (Array.isArray(day.value?.hours) ? day.value.hours 
 const outings = computed(() => (Array.isArray(day.value?.groupsOut) ? day.value.groupsOut : []));
 // Avís general del dia que publica Guàrdies: es veu a totes les vistes.
 const dayNotice = computed(() => String(day.value?.notice || '').trim());
-const summary = computed(() => daySummary(day.value));
-// Sense cap guàrdia pendent, el resum ho diu amb paraules en lloc d'un zero.
-const openLabel = computed(() => {
-  const { open, guards } = summary.value;
-  if (open) return open === 1 ? 'guàrdia sense cobrir' : 'guàrdies sense cobrir';
-  return guards ? 'totes cobertes' : 'cap guàrdia pendent';
-});
 const shortClock = computed(() => formatShortClock(minute.value));
 const slot = computed(() => (viewingToday.value ? currentSlot(minute.value) : null));
 const isCurrent = (hour) => isSlotHour(slot.value, hour.key);
@@ -234,32 +232,12 @@ onBeforeUnmount(() => {
       </div>
 
       <template v-else>
-        <KioskHeader :title="activeView?.name || 'Pantalla informativa'" :screen-name="config.name" :date-label="formatLongDate(selectedDate)" :reloadable="!preview" />
+        <KioskHeader :title="activeView?.name || 'Pantalla informativa'" :screen-name="config.name" :date-label="formatLongDate(selectedDate)" :day-badge="viewType === 'guardies' ? nextDayBadge : ''" :reloadable="!preview" />
 
         <div v-if="viewType === 'guardies' && browsingOtherDay" class="kiosk-banner other-day" role="status">
           <span>Estàs veient el full del <strong>{{ formatLongDate(selectedDate).toLowerCase() }}</strong></span>
           <button type="button" @click="returnToday">Torna a avui</button>
         </div>
-        <div v-else-if="viewType === 'guardies' && showingNextDay" class="kiosk-banner next-day" role="status">
-          Avui ja no hi ha classes: es mostra el full <strong>{{ nextDayLabel }}</strong>
-        </div>
-
-        <div v-if="viewType === 'guardies' && ready && day" class="kiosk-summary" aria-label="Resum de la jornada">
-          <div class="kiosk-kpi" :class="summary.open ? 'is-open' : 'is-covered'">
-            <strong v-if="summary.open" :key="summary.open" class="kpi-value">{{ summary.open }}</strong>
-            <svg v-else class="kpi-value kpi-check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
-            <span>{{ openLabel }}</span>
-          </div>
-          <div class="kiosk-kpi">
-            <strong :key="summary.guards" class="kpi-value">{{ summary.guards }}</strong>
-            <span>{{ summary.guards === 1 ? 'guàrdia' : 'guàrdies' }}</span>
-          </div>
-          <div class="kiosk-kpi">
-            <strong :key="summary.absences" class="kpi-value">{{ summary.absences }}</strong>
-            <span>{{ summary.absences === 1 ? 'absència' : 'absències' }}</span>
-          </div>
-        </div>
-
         <KioskToolbar
           v-if="viewType === 'guardies' || switcherViews.length > 1"
           :day-controls="viewType === 'guardies'"

@@ -7,6 +7,9 @@ const props = defineProps({
   title: { type: String, default: 'Pantalla informativa' },
   screenName: { type: String, default: '' },
   dateLabel: { type: String, default: '' },
+  // «Full de demà»: a la tarda es mostra el full del dia lectiu següent. Va a l'etiqueta
+  // del rellotge en lloc de «Fora de l'horari lectiu», sense una franja d'avís a part.
+  dayBadge: { type: String, default: '' },
   // Mantenir premut el rellotge 3 s recarrega la pantalla (només al quiosc).
   reloadable: { type: Boolean, default: false },
 });
@@ -37,7 +40,7 @@ onBeforeUnmount(() => window.clearTimeout(holdTimer));
 // Només aquest component depèn del segon: la resta de la pantalla no es repinta.
 const { now, minute } = useClock();
 const time = computed(() => formatClock(now.value));
-const session = computed(() => currentSlot(minute.value)?.label || 'Fora de l’horari lectiu');
+const session = computed(() => currentSlot(minute.value)?.label || props.dayBadge || 'Fora de l’horari lectiu');
 </script>
 
 <template>
